@@ -77,6 +77,10 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleVersion</key><string>$BUILD_NUMBER</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSUIElement</key><true/>
+  <key>CFBundleURLTypes</key><array><dict>
+    <key>CFBundleURLName</key><string>$BUNDLE_ID</string>
+    <key>CFBundleURLSchemes</key><array><string>snapr</string></array>
+  </dict></array>
   <key>NSHighResolutionCapable</key><true/>
 $SPARKLE_KEYS
 </dict></plist>
