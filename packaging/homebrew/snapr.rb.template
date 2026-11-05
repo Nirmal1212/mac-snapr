@@ -1,0 +1,26 @@
+cask "snapr" do
+  version "@VERSION@"
+  sha256 "@SHA256@"
+
+  # Placeholder owner/repo: replace OWNER before publishing to a tap.
+  url "https://github.com/OWNER/mac-snapr/releases/download/v#{version}/Snapr-#{version}.dmg"
+  name "Snapr"
+  desc "Window snapping for the menu bar"
+  homepage "https://github.com/OWNER/mac-snapr"
+
+  livecheck do
+    url :url
+    strategy :github_latest
+  end
+
+  auto_updates true
+  depends_on macos: ">= :ventura"
+
+  app "Snapr.app"
+
+  zap trash: [
+    "~/Library/Preferences/@BUNDLE_ID@.plist",
+    "~/Library/Caches/@BUNDLE_ID@",
+    "~/Library/HTTPStorages/@BUNDLE_ID@",
+  ]
+end

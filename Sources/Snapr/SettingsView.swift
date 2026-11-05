@@ -25,6 +25,9 @@ struct SettingsView: View {
                         }
                     }
                 if let launchError { Text(launchError).font(.caption).foregroundColor(.red) }
+                Toggle("Automatically check for updates", isOn: binding(.automaticUpdateChecks))
+                    .disabled(!model.updater.isAvailable)
+                    .help(model.updater.isAvailable ? "" : "Updates are not configured in this build")
                 HStack {
                     Text(model.trusted ? "Accessibility access: granted" : "Accessibility access: not granted")
                     if !model.trusted { Button("Grant…") { model.requestAccessibility() } }

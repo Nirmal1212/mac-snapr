@@ -59,6 +59,8 @@ struct MenuContent: View {
         }
         Button("Settings…") { model.showSettings() }
             .keyboardShortcut(",")
+        Button("Check for Updates…") { model.updater.checkForUpdates() }
+            .disabled(!model.updater.isAvailable)
         Button("Quit Snapr") { NSApplication.shared.terminate(nil) }
             .keyboardShortcut("q")
     }

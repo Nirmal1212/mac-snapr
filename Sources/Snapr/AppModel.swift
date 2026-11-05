@@ -12,6 +12,7 @@ final class AppModel: ObservableObject, AutomationHost {
     let screens = SystemScreenProvider()
     let hotkeys = HotkeyManager()
     let overlay = PreviewOverlay()
+    let updater: UpdateChecking = SparkleUpdater()
     let controller: SnapController
     let debugLog = DebugLog(isEnabled: { HiddenPreferences().debugLogging })
     private(set) lazy var router = AutomationRouter(settings: settings, host: self, log: debugLog)
@@ -59,6 +60,13 @@ final class AppModel: ObservableObject, AutomationHost {
             .filter { $0 == SettingKey<[String]>.ignoredApps.name }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.refreshIgnoreState() }
+            .store(in: &cancellables)
+
+        applyUpdateSettings()
+        settings.changes
+            .filter { $0 == SettingKey<Bool>.automaticUpdateChecks.name }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.applyUpdateSettings(userChanged: true) }
             .store(in: &cancellables)
 
         refreshTrust()
@@ -168,6 +176,13 @@ final class AppModel: ObservableObject, AutomationHost {
 
     func applyShortcuts() {
         failedShortcuts = hotkeys.register(settings.get(.shortcuts))
+    }
+
+    /// Pushes the setting to Sparkle. At launch only an explicit "off" is applied: setting `true` in code
+    /// would skip Sparkle's own consent prompt.
+    func applyUpdateSettings(userChanged: Bool = false) {
+        let enabled = settings.get(.automaticUpdateChecks)
+        if userChanged || !enabled { updater.automaticallyChecks = enabled }
     }
 
     func refreshTrust() {

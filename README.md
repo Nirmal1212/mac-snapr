@@ -18,10 +18,16 @@ Workflow: proposal in `openspec/changes/` → implement via `tasks.md` → `open
 2. The build is ad-hoc signed (not notarized): right-click Snapr.app → Open the first time (or run `xattr -dr com.apple.quarantine /Applications/Snapr.app`).
 3. Grant Accessibility access when prompted (System Settings → Privacy & Security → Accessibility).
 
+## Install with Homebrew
+Once a tap is published (see `docs/releasing.md`): `brew install --cask snapr`. The cask template is `packaging/homebrew/snapr.rb.template`.
+
+## Updates
+Releases built with a feed URL and Sparkle public key check for updates about daily and offer a "Check for Updates…" menu item; turn automatic checks off in Settings. Dev builds (`swift run`) have updates disabled. Maintainer steps (keys, signing, appcast, cask): `docs/releasing.md`.
+
 ## Build
 ```bash
 swift run                 # run from source
-scripts/package.sh        # produces dist/Snapr.app and dist/Snapr-<version>.dmg
+scripts/package.sh        # produces dist/Snapr.app (with Sparkle embedded) and dist/Snapr-<version>.dmg
 ```
 Release: push a tag like `v0.1.0`; CI builds the DMG and attaches it to a GitHub Release.
 
@@ -40,7 +46,7 @@ Snapr lives in the menu bar (no Dock icon). Pick any action from the menu, use a
 - Pressing Left/Right Half repeatedly cycles 1/2, 1/3, 2/3 width.
 - Drag a window to the left/right edge for a half, the top edge to maximize, or a corner for a quarter; a preview shows the target.
 - Rebind or clear shortcuts in Settings (conflicts are flagged), toggle drag snapping, and enable launch at login.
-- Fully local: no network access, no telemetry.
+- Fully local: the only network use is the optional update check; no telemetry.
 
 Screenshots: not yet captured (needs a signed-in desktop session).
 
