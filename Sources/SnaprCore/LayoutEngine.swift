@@ -62,8 +62,15 @@ public enum LayoutEngine {
         else { return nil }
         guard LayoutCatalog.usesWindowGap(action),
             gapsApply(to: action, isPrimary: isPrimary, options: options.gaps)
-        else { return frame }
-        return applyWindowGap(frame, in: area, gap: options.gaps.windowGap)
+        else { return pixelAligned(frame) }
+        return pixelAligned(applyWindowGap(frame, in: area, gap: options.gaps.windowGap))
+    }
+
+    /// Rounds each edge (not origin and size separately) to whole points, so adjacent frames that
+    /// shared an edge before rounding still share it and never overlap.
+    public static func pixelAligned(_ frame: CGRect) -> CGRect {
+        let minX = frame.minX.rounded(), minY = frame.minY.rounded()
+        return CGRect(x: minX, y: minY, width: frame.maxX.rounded() - minX, height: frame.maxY.rounded() - minY)
     }
 
     // MARK: Fit handling

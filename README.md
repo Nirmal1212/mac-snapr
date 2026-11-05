@@ -37,7 +37,7 @@ Snapr lives in the menu bar (no Dock icon). Pick any action from the menu, use a
 | Maximize / Center / Restore | Ctrl+Opt+Return / C / Delete |
 | Next / previous display | Ctrl+Opt+Cmd+Right / Left |
 
-- Pressing Left/Right Half repeatedly cycles 1/2, 1/3, 2/3 width.
+- Pressing Left/Right Half repeatedly cycles 1/2, 2/3, 1/3 width (Rectangle order; switch to 1/2, 1/3, 2/3 in Settings > Layout).
 - Drag a window to the left/right edge for a half, the top edge to maximize, or a corner for a quarter; a preview shows the target.
 - Rebind or clear shortcuts in Settings (conflicts are flagged), toggle drag snapping, and enable launch at login.
 - Fully local: no network access, no telemetry.

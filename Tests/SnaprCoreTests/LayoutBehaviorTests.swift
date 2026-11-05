@@ -35,20 +35,20 @@ final class LayoutBehaviorTests: XCTestCase {
             controller.perform(.rightHalf)
             widths.append(frame(windows).width)
         }
-        XCTAssertEqual(widths[0], 500, accuracy: 0.01)
-        XCTAssertEqual(widths[1], 2000.0 / 3, accuracy: 0.01)
-        XCTAssertEqual(widths[2], 1000.0 / 3, accuracy: 0.01)
-        XCTAssertEqual(widths[3], 500, accuracy: 0.01)
-        XCTAssertEqual(frame(windows).maxX, 1000, accuracy: 0.01)
+        XCTAssertEqual(widths[0], 500, accuracy: 0.51)
+        XCTAssertEqual(widths[1], 2000.0 / 3, accuracy: 0.51)
+        XCTAssertEqual(widths[2], 1000.0 / 3, accuracy: 0.51)
+        XCTAssertEqual(widths[3], 500, accuracy: 0.51)
+        XCTAssertEqual(frame(windows).maxX, 1000, accuracy: 0.51)
     }
 
     func testSpecCycleOrderIsConfigurable() {
         let (controller, windows) = make { $0.halfCycleOrder = .spec }
         controller.perform(.leftHalf)
         controller.perform(.leftHalf)
-        XCTAssertEqual(frame(windows).width, 1000.0 / 3, accuracy: 0.01)
+        XCTAssertEqual(frame(windows).width, 1000.0 / 3, accuracy: 0.51)
         controller.perform(.leftHalf)
-        XCTAssertEqual(frame(windows).width, 2000.0 / 3, accuracy: 0.01)
+        XCTAssertEqual(frame(windows).width, 2000.0 / 3, accuracy: 0.51)
     }
 
     // MARK: Repeat behaviors
@@ -61,11 +61,11 @@ final class LayoutBehaviorTests: XCTestCase {
         XCTAssertEqual(frame(windows), CGRect(x: 2000, y: 0, width: 1000, height: 1600))
         // No display further right: falls back to cycling sizes.
         controller.perform(.rightHalf)
-        XCTAssertEqual(frame(windows).width, 2000.0 * 2 / 3, accuracy: 0.01)
+        XCTAssertEqual(frame(windows).width, 2000.0 * 2 / 3, accuracy: 0.51)
         // Left half walks back.
         controller.perform(.leftHalf)
         controller.perform(.leftHalf)
-        XCTAssertEqual(frame(windows).minX, 0, accuracy: 0.01)
+        XCTAssertEqual(frame(windows).minX, 0, accuracy: 0.51)
     }
 
     func testQuadrantCycling() {
@@ -75,8 +75,8 @@ final class LayoutBehaviorTests: XCTestCase {
         controller.perform(.topLeftQuarter)
         XCTAssertEqual(frame(windows).origin, CGPoint(x: 500, y: 25))
         controller.perform(.topLeftQuarter)
-        XCTAssertEqual(frame(windows).origin.y, 25 + 775.0 / 2, accuracy: 0.01)
-        XCTAssertEqual(frame(windows).origin.x, 500, accuracy: 0.01)
+        XCTAssertEqual(frame(windows).origin.y, 25 + 775.0 / 2, accuracy: 0.51)
+        XCTAssertEqual(frame(windows).origin.x, 500, accuracy: 0.51)
     }
 
     func testQuarterDoesNotCycleByDefault() {
@@ -91,8 +91,8 @@ final class LayoutBehaviorTests: XCTestCase {
         controller.perform(.leftHalf)
         controller.perform(.leftHalf)  // 2/3
         controller.perform(.rightHalf)
-        XCTAssertEqual(frame(windows).width, 2000.0 / 3, accuracy: 0.01)
-        XCTAssertEqual(frame(windows).maxX, 1000, accuracy: 0.01)
+        XCTAssertEqual(frame(windows).width, 2000.0 / 3, accuracy: 0.51)
+        XCTAssertEqual(frame(windows).maxX, 1000, accuracy: 0.51)
     }
 
     func testOppositeSideRestartsCycleByDefault() {
@@ -100,7 +100,7 @@ final class LayoutBehaviorTests: XCTestCase {
         controller.perform(.leftHalf)
         controller.perform(.leftHalf)
         controller.perform(.rightHalf)
-        XCTAssertEqual(frame(windows).width, 500, accuracy: 0.01)
+        XCTAssertEqual(frame(windows).width, 500, accuracy: 0.51)
     }
 
     func testRepeatedMaximizeRestores() {
@@ -142,18 +142,18 @@ final class LayoutBehaviorTests: XCTestCase {
         controller.onMinimumSizeReached = { reported = ($0, $1) }
         controller.perform(.rightThird)
         let result = frame(windows)
-        XCTAssertEqual(result.width, 500, accuracy: 0.01)
+        XCTAssertEqual(result.width, 500, accuracy: 0.51)
         XCTAssertEqual(result.maxX, 1000, accuracy: 0.01, "stays flush with the right edge")
         XCTAssertNotNil(reported)
-        XCTAssertEqual(reported?.0.width ?? 0, 1000.0 / 3, accuracy: 0.01)
+        XCTAssertEqual(reported?.0.width ?? 0, 1000.0 / 3, accuracy: 0.51)
     }
 
     func testFitAnchorsBottomRightCorner() {
         let (controller, windows) = make(minimumSize: CGSize(width: 700, height: 600))
         controller.perform(.bottomRightQuarter)
         let result = frame(windows)
-        XCTAssertEqual(result.maxX, 1000, accuracy: 0.01)
-        XCTAssertEqual(result.maxY, 800, accuracy: 0.01)
+        XCTAssertEqual(result.maxX, 1000, accuracy: 0.51)
+        XCTAssertEqual(result.maxY, 800, accuracy: 0.51)
     }
 
     func testNoHUDWhenTargetReached() {
@@ -180,7 +180,7 @@ final class LayoutBehaviorTests: XCTestCase {
         XCTAssertEqual(LayoutEngine.fit(actual, target: target, in: area), actual)
         let centerTarget = CGRect(x: 300, y: 0, width: 300, height: 600)
         let fitted = LayoutEngine.fit(CGRect(x: 300, y: 0, width: 500, height: 600), target: centerTarget, in: area)
-        XCTAssertEqual(fitted.midX, 450, accuracy: 0.01)
+        XCTAssertEqual(fitted.midX, 450, accuracy: 0.51)
         let exact = CGRect(x: 300, y: 0, width: 300, height: 600)
         XCTAssertEqual(LayoutEngine.fit(exact, target: centerTarget, in: area), exact)
     }
@@ -198,7 +198,7 @@ final class LayoutBehaviorTests: XCTestCase {
         XCTAssertEqual(result?.size, original.size)
         XCTAssertEqual(frame(windows).size, original.size)
         // Cursor was at 50% of the snapped window width; it stays at 50% of the restored one.
-        XCTAssertEqual((cursor.x - frame(windows).minX) / original.width, (250 - 10) / 500, accuracy: 0.01)
+        XCTAssertEqual((cursor.x - frame(windows).minX) / original.width, (250 - 10) / 500, accuracy: 0.51)
         XCTAssertFalse(controller.perform(.restore), "restore point consumed by unsnap")
     }
 

@@ -106,7 +106,7 @@ final class GapTests: XCTestCase {
 
     func testDragZoneTargetUsesGaps() {
         let o = options { $0.windowGap = 10 }
-        let hit = DragZones.target(at: CGPoint(x: 2, y: 400), screens: [primary], enabled: true, options: o)
+        let hit = DragZones.target(at: CGPoint(x: 2, y: 400), screens: [primary], enabled: true, layout: o)
         XCTAssertEqual(hit?.frame.maxX ?? 0, 495, accuracy: 0.001)
     }
 
@@ -117,5 +117,26 @@ final class GapTests: XCTestCase {
         let controller = SnapController(windows: windows, screens: MockScreenProvider([primary]), options: { o })
         controller.perform(.rightHalf)
         XCTAssertEqual(windows.windows[WindowID(1)]?.frame, CGRect(x: 505, y: 25, width: 495, height: 775))
+    }
+
+    func testTargetsAreWholePixelsAndNeighboursNeverOverlap() {
+        let odd = ScreenInfo(
+            id: 1, frame: CGRect(x: 0, y: 0, width: 1001, height: 803),
+            visibleFrame: CGRect(x: 0, y: 25, width: 1001, height: 778))
+        for gap: CGFloat in [0, 7] {
+            var o = LayoutOptions()
+            o.gaps.windowGap = gap
+            let thirds: [SnapAction] = [.leftThird, .centerThird, .rightThird]
+            let frames = thirds.map { LayoutEngine.target(for: $0, on: odd, options: o)! }
+            for f in frames {
+                for v in [f.minX, f.minY, f.width, f.height] { XCTAssertEqual(v, v.rounded()) }
+            }
+            for (a, b) in zip(frames, frames.dropFirst()) {
+                XCTAssertGreaterThanOrEqual(b.minX - a.maxX, gap - 1)
+                XCTAssertLessThanOrEqual(b.minX - a.maxX, gap + 1)
+                XCTAssertTrue(a.intersection(b).isNull || a.intersection(b).width <= 0)
+            }
+            if gap == 0 { XCTAssertEqual(frames[0].maxX, frames[1].minX); XCTAssertEqual(frames[2].maxX, 1001) }
+        }
     }
 }

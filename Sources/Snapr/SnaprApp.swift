@@ -1,8 +1,23 @@
 import AppKit
+import CoreServices
 import SnaprCore
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // Registered before launch completes so a URL that launched the app is not lost.
+        NSAppleEventManager.shared().setEventHandler(
+            self, andSelector: #selector(handleURLEvent(_:withReplyEvent:)),
+            forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
+    }
+
+    @objc private func handleURLEvent(_ event: NSAppleEventDescriptor, withReplyEvent reply: NSAppleEventDescriptor) {
+        guard let string = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue,
+            let url = URL(string: string)
+        else { return }
+        AppModel.shared.handle(url: url)
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Menu bar only, also when run via `swift run` (the packaged app sets LSUIElement).
         NSApp.setActivationPolicy(.accessory)
@@ -37,6 +52,12 @@ struct MenuContent: View {
                 actionButtons(group.actions)
                 Divider()
             }
+        }
+        if let app = model.targetApp {
+            Button(model.targetAppIgnored ? "Stop Ignoring \(app.name)" : "Ignore \(app.name)") {
+                model.toggleIgnoreTargetApp()
+            }
+            Divider()
         }
         Button("Settings…") { model.showSettings() }
             .keyboardShortcut(",")
