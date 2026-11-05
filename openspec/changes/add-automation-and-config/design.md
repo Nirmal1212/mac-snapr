@@ -11,6 +11,11 @@ Builds on the `SnapAction` enum / `ActionRegistry`, typed `SettingKey` / `Settin
 - **Debug log**: bounded in-memory ring buffer (`DebugLog`), no disk or network; records only when `debugLogging` is on.
 - **Enhanced UI**: `AXWindowProvider.setFrame` temporarily clears `AXEnhancedUserInterface` on the owning app and restores it afterwards. **Native resize apps** skip the size-position-size sequence and set size then position once.
 
+## Security
+- `execute-action` is intentionally unauthenticated: any local process or web page can open a `snapr://` URL. It is acceptable because actions only move or resize the focused window and `restore` undoes them; nothing is destructive.
+- URL-driven `ignore-app` / `unignore-app` require an explicit, validated `bundle-id` (`[A-Za-z0-9.-]`, at most 255 characters) and never default to the frontmost app, so a web page cannot silently disable Snapr for the browser. The menu item may still target the frontmost app. The ignored list is capped at 500 entries and logged URLs are truncated to 200 characters.
+- Config import rejects key combos failing `KeyCombo.isValidGlobalShortcut` (same rule as the recorder).
+
 ## Risks / Trade-offs
 - A URL scheme needs the packaged app (`Info.plist`); `swift run` cannot receive URLs.
 - Unregistering hotkeys on app switch is slightly racy with very fast switching; acceptable.

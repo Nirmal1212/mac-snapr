@@ -73,6 +73,14 @@ final class ConfigTests: XCTestCase {
             KeyCombo(keyCode: 126, modifiers: [.control, .command]))
     }
 
+    func testInvalidGlobalShortcutIsRejected() throws {
+        let json = #"{"shortcuts": {"left-half": {"keyCode": 0, "modifiers": 0}}}"#
+        let settings = makeSettings()
+        let skipped = try ConfigDocument.decode(from: Data(json.utf8)).apply(to: settings)
+        XCTAssertEqual(skipped, ["left-half"])
+        XCTAssertEqual(settings.get(.shortcuts).combo(for: .leftHalf), DefaultShortcuts.combo(for: .leftHalf))
+    }
+
     func testNonObjectJSONThrows() {
         XCTAssertThrowsError(try ConfigDocument.decode(from: Data("[1,2]".utf8)))
         XCTAssertThrowsError(try ConfigDocument.decode(from: Data("nonsense".utf8)))

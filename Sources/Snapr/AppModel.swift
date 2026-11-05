@@ -70,8 +70,6 @@ final class AppModel: ObservableObject, AutomationHost {
 
     // MARK: - Automation
 
-    var frontmostBundleID: String? { targetApp?.bundleID }
-
     /// Entry point for `snapr://` URLs.
     func handle(url: URL) { router.handle(url) }
 

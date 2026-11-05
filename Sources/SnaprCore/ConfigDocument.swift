@@ -106,7 +106,7 @@ public struct ConfigDocument: Codable, Equatable {
     @discardableResult
     public func apply(to settings: SettingsStore) -> [String] {
         if let dragSnapEnabled { settings.set(dragSnapEnabled, for: .dragSnapEnabled) }
-        if let ignoredApps { settings.set(ignoredApps, for: .ignoredApps) }
+        if let ignoredApps { settings.set(Array(ignoredApps.prefix(SettingsStore.maxIgnoredApps)), for: .ignoredApps) }
         if let nativeResizeApps { settings.set(nativeResizeApps, for: .nativeResizeApps) }
         var skipped: [String] = []
         if let shortcuts, !shortcuts.isEmpty {
@@ -118,6 +118,7 @@ public struct ConfigDocument: Codable, Equatable {
             }
             for (name, entry) in ordered {
                 guard case .bind(let combo) = entry else { continue }
+                guard combo.isValidGlobalShortcut else { skipped.append(name); continue }
                 if let action = ActionRegistry.action(named: name) {
                     map.assign(combo, to: action)
                 } else {

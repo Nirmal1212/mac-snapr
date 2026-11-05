@@ -13,11 +13,18 @@ public extension SettingsStore {
         return get(.ignoredApps).contains(bundleID)
     }
 
-    func ignore(_ bundleID: String) {
+    /// Maximum number of ignored apps (bounds growth from automation).
+    static var maxIgnoredApps: Int { 500 }
+
+    /// Adds `bundleID`; returns false when the list is full. Already-listed ids succeed.
+    @discardableResult
+    func ignore(_ bundleID: String) -> Bool {
         var list = get(.ignoredApps)
-        guard !list.contains(bundleID) else { return }
+        if list.contains(bundleID) { return true }
+        guard list.count < Self.maxIgnoredApps else { return false }
         list.append(bundleID)
         set(list, for: .ignoredApps)
+        return true
     }
 
     func unignore(_ bundleID: String) {
@@ -31,14 +38,20 @@ public extension SettingsStore {
 public enum AutomationCommand: Equatable {
     /// `snapr://execute-action?name=<action name>`. The name is resolved through `ActionRegistry` at run time.
     case executeAction(name: String)
-    /// `snapr://ignore-app[?bundle-id=…]`; nil means the frontmost app.
-    case ignoreApp(bundleID: String?)
-    /// `snapr://unignore-app[?bundle-id=…]`; nil means the frontmost app.
-    case unignoreApp(bundleID: String?)
+    /// `snapr://ignore-app?bundle-id=…`. The id is required: URLs never default to the frontmost app.
+    case ignoreApp(bundleID: String)
+    /// `snapr://unignore-app?bundle-id=…` (id required).
+    case unignoreApp(bundleID: String)
 }
 
 public enum AutomationURL {
     public static let scheme = "snapr"
+
+    /// Bundle ids from URLs must be 1...255 characters of [A-Za-z0-9.-].
+    public static func isValidBundleID(_ id: String) -> Bool {
+        let allowed = Set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-")
+        return !id.isEmpty && id.utf8.count <= 255 && id.allSatisfy { allowed.contains($0) }
+    }
 
     /// Parses a `snapr://` URL. Returns nil for other schemes, unknown tasks or missing required parameters.
     public static func parse(_ url: URL) -> AutomationCommand? {
@@ -56,9 +69,11 @@ public enum AutomationURL {
         case "execute-action":
             return value("name").map { .executeAction(name: $0) }
         case "ignore-app":
-            return .ignoreApp(bundleID: value("bundle-id"))
+            guard let id = value("bundle-id"), isValidBundleID(id) else { return nil }
+            return .ignoreApp(bundleID: id)
         case "unignore-app":
-            return .unignoreApp(bundleID: value("bundle-id"))
+            guard let id = value("bundle-id"), isValidBundleID(id) else { return nil }
+            return .unignoreApp(bundleID: id)
         default:
             return nil
         }
@@ -67,7 +82,6 @@ public enum AutomationURL {
 
 /// What the app must provide to carry out automation commands.
 public protocol AutomationHost: AnyObject {
-    var frontmostBundleID: String? { get }
     func perform(_ action: SnapAction)
 }
 
@@ -79,7 +93,7 @@ public final class AutomationRouter {
         case ignored(String)
         case unignored(String)
         case unknownAction(String)
-        case noTargetApp
+        case ignoreListFull
         case invalidURL
     }
 
@@ -96,7 +110,7 @@ public final class AutomationRouter {
     @discardableResult
     public func handle(_ url: URL) -> Outcome {
         let outcome = run(AutomationURL.parse(url))
-        log?.log("url \(url.absoluteString) -> \(outcome)")
+        log?.log("url \(url.absoluteString.prefix(200)) -> \(String(describing: outcome).prefix(200))")
         return outcome
     }
 
@@ -107,12 +121,9 @@ public final class AutomationRouter {
             guard let action = ActionRegistry.action(named: name) else { return .unknownAction(name) }
             host?.perform(action)
             return .performed(action)
-        case .ignoreApp(let bundleID):
-            guard let id = bundleID ?? host?.frontmostBundleID else { return .noTargetApp }
-            settings.ignore(id)
-            return .ignored(id)
-        case .unignoreApp(let bundleID):
-            guard let id = bundleID ?? host?.frontmostBundleID else { return .noTargetApp }
+        case .ignoreApp(let id):
+            return settings.ignore(id) ? .ignored(id) : .ignoreListFull
+        case .unignoreApp(let id):
             settings.unignore(id)
             return .unignored(id)
         }

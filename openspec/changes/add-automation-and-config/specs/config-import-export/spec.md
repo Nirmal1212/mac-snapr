@@ -17,6 +17,10 @@ The system SHALL import JSON configuration, ignoring unknown keys and leaving se
 - **WHEN** a config binds a shortcut to an action name that is not registered
 - **THEN** that entry is skipped and the rest is applied
 
+#### Scenario: Invalid shortcut
+- **WHEN** a config binds a combo that is not a valid global shortcut (for example no modifiers on a non-function key)
+- **THEN** that entry is skipped and reported, including when loaded at launch
+
 ### Requirement: Load On Launch
 The system SHALL apply `~/Library/Application Support/Snapr/config.json` at launch when it exists.
 

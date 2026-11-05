@@ -26,7 +26,12 @@ final class AutomationTests: XCTestCase {
 
     func testParseIgnoreVariants() {
         XCTAssertEqual(AutomationURL.parse(url("snapr://ignore-app?bundle-id=a.b")), .ignoreApp(bundleID: "a.b"))
-        XCTAssertEqual(AutomationURL.parse(url("snapr://ignore-app")), .ignoreApp(bundleID: nil))
+        XCTAssertNil(AutomationURL.parse(url("snapr://ignore-app")))
+        XCTAssertNil(AutomationURL.parse(url("snapr://unignore-app")))
+        XCTAssertNil(AutomationURL.parse(url("snapr://ignore-app?bundle-id=a%20b")))
+        XCTAssertNil(AutomationURL.parse(url("snapr://ignore-app?bundle-id=a_b")))
+        XCTAssertNil(AutomationURL.parse(url("snapr://ignore-app?bundle-id=\(String(repeating: "a", count: 256))")))
+        XCTAssertNotNil(AutomationURL.parse(url("snapr://ignore-app?bundle-id=\(String(repeating: "a", count: 255))")))
         XCTAssertEqual(AutomationURL.parse(url("snapr://unignore-app?bundle-id=a.b")), .unignoreApp(bundleID: "a.b"))
     }
 
@@ -63,12 +68,25 @@ final class AutomationTests: XCTestCase {
         XCTAssertFalse(settings.isIgnored("a.b"))
     }
 
-    func testIgnoreDefaultsToFrontmostApp() {
-        let (router, host, settings) = makeRouter()
-        XCTAssertEqual(router.handle(url("snapr://ignore-app")), .ignored("com.example.Front"))
-        XCTAssertTrue(settings.isIgnored("com.example.Front"))
-        host.frontmostBundleID = nil
-        XCTAssertEqual(router.handle(url("snapr://unignore-app")), .noTargetApp)
+    func testURLNeverDefaultsToFrontmostApp() {
+        let (router, _, settings) = makeRouter()
+        XCTAssertEqual(router.handle(url("snapr://ignore-app")), .invalidURL)
+        XCTAssertTrue(settings.get(.ignoredApps).isEmpty)
+    }
+
+    func testIgnoreListIsBounded() {
+        let (router, _, settings) = makeRouter()
+        for index in 0..<SettingsStore.maxIgnoredApps { settings.ignore("app.n\(index)") }
+        XCTAssertEqual(router.handle(url("snapr://ignore-app?bundle-id=one.more")), .ignoreListFull)
+        XCTAssertEqual(settings.get(.ignoredApps).count, SettingsStore.maxIgnoredApps)
+    }
+
+    func testLoggedURLIsTruncated() {
+        let settings = SettingsStore(storage: MemorySettingsStorage())
+        let log = DebugLog()
+        let router = AutomationRouter(settings: settings, host: FakeHost(), log: log)
+        router.handle(url("snapr://execute-action?name=\(String(repeating: "x", count: 5000))"))
+        XCTAssertLessThan(log.entries[0].message.count, 400)
     }
 
     // MARK: Hidden preferences

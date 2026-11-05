@@ -16,4 +16,12 @@ The system SHALL handle `snapr://` URLs to execute actions and manage ignored ap
 
 #### Scenario: Ignore and unignore
 - **WHEN** `snapr://ignore-app?bundle-id=com.example.App` or `snapr://unignore-app?bundle-id=com.example.App` is opened
-- **THEN** that bundle identifier is added to or removed from the ignored list; without `bundle-id` the frontmost app is used
+- **THEN** that bundle identifier is added to or removed from the ignored list
+
+#### Scenario: Bundle id required and validated
+- **WHEN** `ignore-app` or `unignore-app` has no `bundle-id`, or it is longer than 255 characters or contains characters outside `[A-Za-z0-9.-]`
+- **THEN** the URL is rejected and the ignored list is unchanged (URLs never default to the frontmost app)
+
+#### Scenario: Bounded list
+- **WHEN** the ignored list already holds 500 apps
+- **THEN** further ignore requests are rejected
