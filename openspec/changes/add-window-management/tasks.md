@@ -28,4 +28,5 @@
 
 ## 7. Release
 - [ ] 7.1 Notarization + DMG
-- [x] 7.2 README and screenshots
+- [x] 7.2 README
+- [ ] 7.3 Screenshots

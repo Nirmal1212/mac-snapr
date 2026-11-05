@@ -79,4 +79,9 @@ final class ShortcutsAndSettingsTests: XCTestCase {
         XCTAssertFalse(KeyCombo(keyCode: KeyCombo.Key.c, modifiers: []).isValidGlobalShortcut)
         XCTAssertTrue(KeyCombo(keyCode: 122, modifiers: []).isValidGlobalShortcut)
     }
+
+    func testDecodingToleratesMissingFields() throws {
+        let map = try JSONDecoder().decode(ShortcutMap.self, from: Data("{}".utf8))
+        XCTAssertEqual(map, ShortcutMap())
+    }
 }

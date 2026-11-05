@@ -54,7 +54,10 @@ final class DragSnapMonitor {
 
     func stop() {
         if let source { CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes) }
-        if let tap { CGEvent.tapEnable(tap: tap, enable: false) }
+        if let tap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+            CFMachPortInvalidate(tap)
+        }
         source = nil
         tap = nil
         reset()
@@ -110,7 +113,7 @@ final class DragSnapMonitor {
 
     private func finish() {
         defer { reset() }
-        guard confirmedDrag, let window = tracked, let target = activeTarget else { return }
+        guard settings.get(.dragSnapEnabled), confirmedDrag, let window = tracked, let target = activeTarget else { return }
         let original = startFrame
         // Let the system finish its own drag-release move before we place the window.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [controller, windows] in

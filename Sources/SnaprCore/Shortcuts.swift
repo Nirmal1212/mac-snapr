@@ -114,6 +114,15 @@ public struct ShortcutMap: Codable, Equatable {
 
     public init() {}
 
+    private enum CodingKeys: String, CodingKey { case overrides, cleared }
+
+    /// Tolerant decoding so fields added later never reset saved shortcuts.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        overrides = try container.decodeIfPresent([String: KeyCombo].self, forKey: .overrides) ?? [:]
+        cleared = try container.decodeIfPresent(Set<String>.self, forKey: .cleared) ?? []
+    }
+
     public func combo(for action: SnapAction) -> KeyCombo? {
         if cleared.contains(action.name) { return nil }
         return overrides[action.name] ?? DefaultShortcuts.combo(for: action)

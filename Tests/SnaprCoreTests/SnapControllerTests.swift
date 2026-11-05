@@ -123,4 +123,12 @@ final class SnapControllerTests: XCTestCase {
         let controller = SnapController(windows: windows, screens: MockScreenProvider([screen1]))
         XCTAssertFalse(controller.perform(.maximize))
     }
+
+    func testFailedRestoreKeepsStoredFrame() {
+        let (controller, windows) = make()
+        controller.perform(.leftHalf)
+        windows.windows[winID]?.canMove = false
+        XCTAssertFalse(controller.perform(.restore))
+        XCTAssertNotNil(controller.restoreStore.frame(for: winID))
+    }
 }

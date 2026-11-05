@@ -29,6 +29,13 @@ struct SettingsView: View {
                     Text(model.trusted ? "Accessibility access: granted" : "Accessibility access: not granted")
                     if !model.trusted { Button("Grant…") { model.requestAccessibility() } }
                 }
+                if model.trusted && !model.dragRunning {
+                    HStack {
+                        Text("Drag snapping is not running (event tap unavailable). Retrying…")
+                            .font(.caption).foregroundColor(.orange)
+                        Button("Grant Access…") { model.requestAccessibility() }
+                    }
+                }
             }
             Section("Shortcuts") {
                 ForEach(ActionRegistry.grouped(), id: \.category) { group in

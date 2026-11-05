@@ -40,9 +40,11 @@ public final class SnapController {
 
         switch action {
         case .restore:
-            guard let frame = restoreStore.take(window.id) else { return false }
+            guard let frame = restoreStore.frame(for: window.id) else { return false }
+            guard apply(frame, to: window, bounds: current.visibleFrame) != nil else { return false }
+            restoreStore.clear(window.id)
             lastSnap[window.id] = nil
-            return apply(frame, to: window, bounds: current.visibleFrame) != nil
+            return true
 
         case .nextDisplay, .previousDisplay:
             guard let destination = ScreenGeometry.neighbor(of: current, in: all, forward: action == .nextDisplay)

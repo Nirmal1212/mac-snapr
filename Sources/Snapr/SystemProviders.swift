@@ -60,6 +60,8 @@ final class AXWindowProvider: WindowProvider {
         let status = AXUIElementCopyElementAtPosition(
             AXUIElementCreateSystemWide(), Float(point.x), Float(point.y), &hit)
         guard status == .success, let hit else { return nil }
+        var pid: pid_t = 0
+        if AXUIElementGetPid(hit, &pid) == .success, pid == ProcessInfo.processInfo.processIdentifier { return nil }
         let role = Self.string(hit, kAXRoleAttribute)
         let window = role == kAXWindowRole as String ? hit : Self.element(hit, kAXWindowAttribute)
         return window.flatMap(info(for:))

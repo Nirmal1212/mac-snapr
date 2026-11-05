@@ -17,6 +17,7 @@ final class AppModel: ObservableObject {
         windows: windows, screens: screens, controller: controller, settings: settings, overlay: overlay)
 
     @Published private(set) var trusted = AXIsProcessTrusted()
+    @Published private(set) var dragRunning = false
     @Published var failedShortcuts: [SnapAction] = []
 
     private var cancellables: Set<AnyCancellable> = []
@@ -32,7 +33,7 @@ final class AppModel: ObservableObject {
     }
 
     func start() {
-        hotkeys.onAction = { [weak self] action in self?.controller.perform(action) }
+        hotkeys.onAction = { [weak self] action in self?.perform(action) }
         hotkeys.install()
         applyShortcuts()
         settings.changes
@@ -42,12 +43,10 @@ final class AppModel: ObservableObject {
             .store(in: &cancellables)
 
         refreshTrust()
-        if !trusted {
-            showOnboarding()
-            // Poll cheaply until the user grants access, then bring features up.
-            pollTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
-                self?.refreshTrust()
-            }
+        if !trusted { showOnboarding() }
+        // Poll cheaply until access is granted and the drag monitor is up; retried if tap creation fails.
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+            self?.refreshTrust()
         }
     }
 
@@ -65,9 +64,19 @@ final class AppModel: ObservableObject {
         if now != trusted { trusted = now }
         if now {
             if !dragMonitor.isRunning { dragMonitor.start() }
+            onboarding.close()
+        } else if dragMonitor.isRunning {
+            dragMonitor.stop()
+        }
+        let running = dragMonitor.isRunning
+        if running != dragRunning { dragRunning = running }
+        if now && running {
             pollTimer?.invalidate()
             pollTimer = nil
-            onboarding.close()
+        } else if pollTimer == nil {
+            pollTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+                self?.refreshTrust()
+            }
         }
     }
 

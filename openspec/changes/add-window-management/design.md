@@ -19,3 +19,4 @@ Greenfield menu bar app controlling other apps' windows via Accessibility API.
 ## Resolved
 - Default shortcut modifiers: Ctrl+Opt (Ctrl+Opt+Cmd for display moves). Users can rebind in Settings.
 - Shared extension points: `SnapAction` enum + `ActionRegistry` (menu, shortcuts and settings iterate it), typed `SettingKey`/`SettingsStore`, `WindowProvider`/`ScreenProvider` protocols with mocks in `SnaprCore`.
+- Limitation: actions are a closed `SnapAction` enum (compile-time). Runtime-defined actions (e.g. custom zones) will need the registry to move to a protocol-based model in a later change.
