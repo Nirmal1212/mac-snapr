@@ -13,9 +13,12 @@ python3 -m http.server -d site 8000
 
 ## Publish with GitHub Pages
 
-The repo has no deploy workflow on purpose. Publish manually:
+The repo has no deploy workflow on purpose. Publish manually.
 
-1. Merge the site to the branch you want to publish (for example `main`).
-2. Pages serves only `/` or `/docs` from a branch, so either copy `site/` to `/docs`, or use a Pages deployment from a GitHub Actions workflow you add yourself.
-3. In the repo go to Settings, Pages, choose "Deploy from a branch", select the branch and folder, and Save.
-4. The site appears at `https://nirmal1212.github.io/mac-snapr/`. All links are relative, so a project subpath works.
+With Git Flow, publish from `main` after a release:
+
+1. After a release is merged to `main`, either copy `site/` into `/docs` on that branch, or add an Actions workflow of your own (Pages serves only `/` or `/docs` from a branch).
+2. In the repo go to Settings, Pages, choose "Deploy from a branch", select `main` and the folder, and Save.
+3. The site appears at `https://nirmal1212.github.io/mac-snapr/`. All links are relative, so a project subpath works.
+
+The footer LICENSE link points at the `develop` branch; change it to `main` after the first release.

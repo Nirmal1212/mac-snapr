@@ -15,7 +15,7 @@ Workflow: proposal in `openspec/changes/` → implement via `tasks.md` → `open
 
 ## Try it (testers)
 1. Download `Snapr-<version>.dmg` from the Releases page and drag Snapr to Applications.
-2. The build is ad-hoc signed (not notarized): right-click Snapr.app → Open the first time (or run `xattr -dr com.apple.quarantine /Applications/Snapr.app`).
+2. The build is ad-hoc signed (not notarized): on macOS 13/14 right-click Snapr.app → Open the first time; on macOS 15 Sequoia and later, try opening it, then System Settings → Privacy & Security → "Open Anyway". Or run `xattr -dr com.apple.quarantine /Applications/Snapr.app`.
 3. Grant Accessibility access when prompted (System Settings → Privacy & Security → Accessibility).
 
 ## Install with Homebrew

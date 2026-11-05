@@ -52,7 +52,7 @@
   <section class="alt" id="features" aria-labelledby="h-features">
     <div class="wrap">
       <h2 id="h-features">What Snapr does</h2>
-      <p class="sub">Every feature below is implemented in the app today. Defaults are listed in the README; all shortcuts can be rebound in Settings.</p>
+      <p class="sub">Everything below is in the app's source today; no release with all of it has shipped yet. Defaults are listed in the README; all shortcuts can be rebound in Settings.</p>
       <div class="grid">
         <div class="card"><h3>Snap layouts</h3>
           <p>Halves, quarters, thirds and two-thirds, plus fourths, sixths, eighths and ninths, center half, almost-maximize, maximize, center and restore. Repeating a half cycles 1/2, 2/3 and 1/3 width.</p></div>
@@ -85,7 +85,7 @@
       <p class="sub">Snapr is currently distributed as an ad-hoc signed DMG. It is not notarized and not on the App Store, so macOS asks for a little extra confirmation the first time.</p>
       <ol class="steps">
         <li><h3>Download the DMG</h3><p>Get <code>Snapr-&lt;version&gt;.dmg</code> from the <a href="https://github.com/Nirmal1212/mac-snapr/releases">Releases page</a> and drag Snapr to Applications.</p></li>
-        <li><h3>Right-click, then Open</h3><p>The first time, right-click Snapr.app and choose Open to get past Gatekeeper. Alternatively run <code>xattr -dr com.apple.quarantine /Applications/Snapr.app</code>.</p></li>
+        <li><h3>Open past Gatekeeper</h3><p>On macOS 13 and 14, right-click Snapr.app and choose Open. On macOS 15 Sequoia and later, try opening the app, then go to System Settings, Privacy &amp; Security and click "Open Anyway". Or run <code>xattr -dr com.apple.quarantine /Applications/Snapr.app</code>.</p></li>
         <li><h3>Grant Accessibility</h3><p>When prompted, allow Snapr in System Settings, Privacy &amp; Security, Accessibility. Then use the menu bar icon, a shortcut or a drag.</p></li>
       </ol>
       <p class="note">Prefer Homebrew? A cask template exists in the repo, but a tap has not been published yet. Check the Releases page for status.</p>
@@ -103,9 +103,9 @@
     <div class="wrap">
       <h2 id="h-faq">FAQ</h2>
       <details><summary>Why does Snapr need Accessibility permission?</summary>
-        <p>macOS only lets an app move and resize other apps' windows through the Accessibility API. Snapr uses it for that and for detecting drags to screen edges. It does not read the content of your windows.</p></details>
+        <p>macOS only lets an app move and resize other apps' windows through the Accessibility API. Snapr uses it for that and for detecting drags to screen edges. It reads window titles and positions locally (for example for saved layouts and the new-window action); it does not read window contents and sends nothing off your Mac.</p></details>
       <details><summary>Why does macOS warn me when I open it?</summary>
-        <p>Current builds are ad-hoc signed and not notarized by Apple, so Gatekeeper blocks a normal double-click on first launch. Right-click Snapr.app and choose Open, or remove the quarantine flag as described above.</p></details>
+        <p>Current builds are ad-hoc signed and not notarized by Apple, so Gatekeeper blocks a normal double-click on first launch. On macOS 13 and 14, right-click Snapr.app and choose Open. On macOS 15 Sequoia and later that no longer works for unnotarized apps: try opening the app, then use System Settings, Privacy &amp; Security, "Open Anyway". Or remove the quarantine flag with <code>xattr -dr com.apple.quarantine /Applications/Snapr.app</code>.</p></details>
       <details><summary>Which macOS versions are supported?</summary>
         <p>macOS 13 (Ventura) or later.</p></details>
       <details><summary>Is it really free?</summary>
