@@ -44,10 +44,7 @@ final class AppModel: ObservableObject {
 
         refreshTrust()
         if !trusted { showOnboarding() }
-        // Poll cheaply until access is granted and the drag monitor is up; retried if tap creation fails.
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
-            self?.refreshTrust()
-        }
+        // refreshTrust() owns the poll timer: it polls until access is granted and the drag monitor is up.
     }
 
     func perform(_ action: SnapAction) {
