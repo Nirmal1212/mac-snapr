@@ -49,7 +49,9 @@ final class SettingsIndexTests: XCTestCase {
         let results = index.search("gap")
         XCTAssertFalse(results.isEmpty)
         XCTAssertTrue(results.contains { $0.id == "gaps.window-gap" })
-        XCTAssertTrue(results.allSatisfy { $0.section == .gaps || $0.title.localizedCaseInsensitiveContains("gap") || !$0.keywords.isEmpty })
+        XCTAssertTrue(results.allSatisfy {
+            $0.section == .gaps || $0.title.localizedCaseInsensitiveContains("gap") || !$0.keywords.isEmpty
+        })
     }
 
     func testMultiWordRequiresEveryToken() {

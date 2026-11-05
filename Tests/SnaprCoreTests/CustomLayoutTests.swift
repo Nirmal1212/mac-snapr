@@ -23,7 +23,11 @@ final class CustomLayoutTests: XCTestCase {
     let combo = KeyCombo(keyCode: KeyCombo.Key.up, modifiers: [.control, .shift])
 
     private func makeSettings() -> SettingsStore { SettingsStore(storage: MemorySettingsStorage()) }
-    private func zone(_ id: String = "a", rect: FractionRect = FractionRect(x: 0.1, y: 0.1, width: 0.5, height: 0.5), shortcut: KeyCombo? = nil) -> CustomZone {
+    private func zone(
+        _ id: String = "a",
+        rect: FractionRect = FractionRect(x: 0.1, y: 0.1, width: 0.5, height: 0.5),
+        shortcut: KeyCombo? = nil
+    ) -> CustomZone {
         CustomZone(id: id, name: "Zone \(id)", rect: rect, shortcut: shortcut)
     }
 
@@ -222,7 +226,9 @@ final class CustomLayoutTests: XCTestCase {
         try store.save(
             SavedLayout(
                 id: "l", name: "L",
-                entries: [LayoutEntry(bundleID: "com.a", title: "T", screenIndex: 0, rect: FractionRect(x: 0, y: 0, width: 0.5, height: 0.5))]))
+                entries: [LayoutEntry(
+                    bundleID: "com.a", title: "T", screenIndex: 0,
+                    rect: FractionRect(x: 0, y: 0, width: 0.5, height: 0.5))]))
         XCTAssertTrue(runner.perform(.layout("l")))
         XCTAssertEqual(provider.windows[WindowID(1)]?.frame, CGRect(x: 0, y: 0, width: 500, height: 400))
         XCTAssertFalse(runner.perform(.layout("nope")))
@@ -237,7 +243,9 @@ final class CustomLayoutTests: XCTestCase {
         try store.save(
             SavedLayout(
                 id: "w", name: "Work",
-                entries: [LayoutEntry(bundleID: "com.a", title: "T", screenIndex: 1, rect: FractionRect(x: 0, y: 0, width: 0.5, height: 1))],
+                entries: [LayoutEntry(
+                    bundleID: "com.a", title: "T", screenIndex: 1,
+                    rect: FractionRect(x: 0, y: 0, width: 0.5, height: 1))],
                 shortcut: KeyCombo(keyCode: KeyCombo.Key.down, modifiers: [.control, .shift])))
         let data = try ConfigDocument.export(from: source).encoded()
         let target = makeSettings()
@@ -256,7 +264,9 @@ final class CustomLayoutTests: XCTestCase {
           "garbage",
           {"id": "Bad Id", "name": "X", "rect": {"x": 0, "y": 0, "width": 1, "height": 1}},
           {"id": "huge", "name": "X", "rect": {"x": 0, "y": 0, "width": 5, "height": 1}}
-        ], "savedLayouts": [{"id": "l", "name": "L", "entries": [{"bundleID": "com.a", "screenIndex": 0, "rect": {"x":0,"y":0,"width":1,"height":1}}, {"nope": 1}], "newField": 3}]}
+        ], "savedLayouts": [{"id": "l", "name": "L", "entries": [
+          {"bundleID": "com.a", "screenIndex": 0, "rect": {"x":0,"y":0,"width":1,"height":1}}, {"nope": 1}
+        ], "newField": 3}]}
         """
         let settings = makeSettings()
         let skipped = try ConfigDocument.decode(from: Data(json.utf8)).apply(to: settings)
@@ -308,7 +318,7 @@ final class CustomLayoutTests: XCTestCase {
         try ConfigDocument.decode(from: Data(#"{"spacesEnabled": true}"#.utf8)).apply(to: settings)
         XCTAssertFalse(settings.get(.spacesEnabled))
         let exported = try ConfigDocument.export(from: settings).encoded()
-        XCTAssertFalse(String(decoding: exported, as: UTF8.self).contains("spaces"))
+        XCTAssertFalse((String(bytes: exported, encoding: .utf8) ?? "").contains("spaces"))
     }
 
     // MARK: Automation

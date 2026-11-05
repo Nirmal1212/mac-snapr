@@ -16,7 +16,8 @@ final class LayoutGeometryTests: XCTestCase {
         XCTAssertEqual(union, area, file: file, line: line)
         for (i, a) in frames.enumerated() {
             for b in frames[(i + 1)...] {
-                XCTAssertTrue(a.intersection(b).isNull || a.intersection(b).isEmpty, file: file, line: line)
+                let overlap = a.intersection(b)
+                XCTAssertTrue(overlap.isNull || overlap.isEmpty, file: file, line: line)
             }
         }
     }

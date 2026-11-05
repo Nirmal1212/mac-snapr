@@ -86,10 +86,8 @@ public final class RuntimeActionRunner: RuntimeActionPerforming {
     private func apply(_ layout: SavedLayout) -> Bool {
         guard let lister else { return false }
         let plan = ArrangementPlanner.plan(layout: layout, windows: lister.listWindows(), screens: screens.screens())
-        var changed = false
-        for placement in plan {
-            if controller.snap(placement.window.info, toFrame: placement.frame, screen: placement.screen) { changed = true }
-        }
-        return changed
+        // Place every window (no short-circuit); report whether any moved.
+        let results = plan.map { controller.snap($0.window.info, toFrame: $0.frame, screen: $0.screen) }
+        return results.contains(true)
     }
 }

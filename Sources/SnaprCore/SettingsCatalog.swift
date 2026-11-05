@@ -1,7 +1,8 @@
 import Foundation
 
 /// Search entries per section. Every control in the settings views needs an entry here whose id matches the
-/// view's `.settingTarget("<id>")` (see CONTRIBUTING.md). Titles mostly mirror the visible labels (without live values); keywords add synonyms.
+/// view's `.settingTarget("<id>")` (see CONTRIBUTING.md). Titles mostly mirror the visible labels
+/// (without live values); keywords add synonyms.
 extension SettingsSection {
     public var searchEntries: [SettingsEntry] {
         switch self {

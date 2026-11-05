@@ -296,9 +296,9 @@ final class NewWindowMonitorTests: XCTestCase {
         let list = MockWindowListProvider([
             ManagedWindow(id: WindowID(1), frame: CGRect(x: 0, y: 0, width: 300, height: 300))
         ])
-        let monitor = NewWindowMonitor(list: list, options: { options }) { action, window in
-            applied.append((action, window.id))
-        }
+        let monitor = NewWindowMonitor(
+            list: list, options: { options },
+            apply: { action, window in applied.append((action, window.id)) })
         return (monitor, list, { applied }, { options.newWindowAction = $0 })
     }
 
