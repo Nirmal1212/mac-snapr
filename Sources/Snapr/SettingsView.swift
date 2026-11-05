@@ -42,11 +42,28 @@ struct SettingsView: View {
                     Text(group.category.rawValue).font(.headline).padding(.top, 6)
                     ForEach(group.actions, id: \.self) { action in row(action) }
                 }
-                Button("Restore Default Shortcuts") {
-                    var map = settings.get(.shortcuts)
-                    map.resetAll()
-                    settings.set(map, for: .shortcuts)
+                HStack {
+                    Button("Restore Default Shortcuts") { model.restoreDefaultShortcuts() }
+                    Button("Use Spectacle Shortcuts") { model.applySpectacleShortcuts() }
                 }
+            }
+            Section("Ignored Apps") {
+                Text("Snapr shortcuts are off while one of these apps is frontmost.")
+                    .font(.caption).foregroundColor(.secondary)
+                appList(.ignoredApps)
+            }
+            Section("Compatibility") {
+                Text("Apps resized with a single size-then-position pass.")
+                    .font(.caption).foregroundColor(.secondary)
+                appList(.nativeResizeApps)
+            }
+            Section("Configuration") {
+                HStack {
+                    Button("Import Config…") { model.importConfig() }
+                    Button("Export Config…") { model.exportConfig() }
+                    Button("Debug Log…") { model.showDebugLog() }
+                }
+                if let message = model.configMessage { Text(message).font(.caption).foregroundColor(.secondary) }
             }
         }
         .formStyle(.grouped)
@@ -103,6 +120,26 @@ struct SettingsView: View {
         var map = settings.get(.shortcuts)
         change(&map)
         settings.set(map, for: .shortcuts)
+    }
+
+    /// Editable list of bundle identifiers with an "add current app" shortcut.
+    private func appList(_ key: SettingKey<[String]>) -> some View {
+        let list = settings.get(key)
+        return VStack(alignment: .leading) {
+            ForEach(list, id: \.self) { id in
+                HStack {
+                    Text(id)
+                    Spacer()
+                    Button {
+                        settings.set(list.filter { $0 != id }, for: key)
+                    } label: { Image(systemName: "minus.circle") }
+                        .buttonStyle(.borderless)
+                }
+            }
+            if let app = model.targetApp, !list.contains(app.bundleID) {
+                Button("Add \(app.name)") { settings.set(list + [app.bundleID], for: key) }
+            }
+        }
     }
 
     private func binding(_ key: SettingKey<Bool>) -> Binding<Bool> {

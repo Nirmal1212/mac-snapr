@@ -23,6 +23,9 @@ final class SystemScreenProvider: ScreenProvider {
 /// Accessibility-API-backed windows of the frontmost app other than Snapr.
 final class AXWindowProvider: WindowProvider {
     private var elements: [WindowID: AXUIElement] = [:]
+    /// Per-app quirks (native resize list, Enhanced UI handling); set by `AppModel`.
+    var compatibility: WindowCompatibility?
+    var debugLog: DebugLog?
     private var lastExternalPID: pid_t?
     private var token: NSObjectProtocol?
 
@@ -74,12 +77,38 @@ final class AXWindowProvider: WindowProvider {
     @discardableResult
     func setFrame(_ frame: CGRect, for id: WindowID) -> CGRect? {
         guard let element = elements[id] else { return nil }
-        // Size, position, size: the first resize may be clamped by the old display, the last settles it.
-        Self.set(element, kAXSizeAttribute, size: frame.size)
-        Self.set(element, kAXPositionAttribute, point: frame.origin)
-        Self.set(element, kAXSizeAttribute, size: frame.size)
+        var pid: pid_t = 0
+        AXUIElementGetPid(element, &pid)
+        let bundleID = pid > 0 ? NSRunningApplication(processIdentifier: pid)?.bundleIdentifier : nil
+
+        // Apps with Enhanced User Interface animate and fight resizes; switch it off for the duration.
+        var restoreEnhancedUI: (() -> Void)?
+        if pid > 0, compatibility?.handlesEnhancedUI ?? true {
+            let app = AXUIElementCreateApplication(pid)
+            if Self.bool(app, Self.enhancedUIAttribute) == true {
+                AXUIElementSetAttributeValue(app, Self.enhancedUIAttribute as CFString, kCFBooleanFalse)
+                debugLog?.log("enhanced UI off for \(bundleID ?? "pid \(pid)")")
+                restoreEnhancedUI = {
+                    AXUIElementSetAttributeValue(app, Self.enhancedUIAttribute as CFString, kCFBooleanTrue)
+                }
+            }
+        }
+        defer { restoreEnhancedUI?() }
+
+        if compatibility?.usesNativeResize(bundleID) == true {
+            debugLog?.log("native resize for \(bundleID ?? "?")")
+            Self.set(element, kAXSizeAttribute, size: frame.size)
+            Self.set(element, kAXPositionAttribute, point: frame.origin)
+        } else {
+            // Size, position, size: the first resize may be clamped by the old display, the last settles it.
+            Self.set(element, kAXSizeAttribute, size: frame.size)
+            Self.set(element, kAXPositionAttribute, point: frame.origin)
+            Self.set(element, kAXSizeAttribute, size: frame.size)
+        }
         return Self.frame(of: element)
     }
+
+    private static let enhancedUIAttribute = "AXEnhancedUserInterface"
 
     // MARK: - Helpers
 
