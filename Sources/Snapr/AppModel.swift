@@ -14,14 +14,19 @@ final class AppModel: ObservableObject, AutomationHost {
     let overlay = PreviewOverlay()
     let updater: UpdateChecking = SparkleUpdater()
     let hud = MinimumSizeHUD()
+    // MARK: add-multi-window-modes
+    /// Screens with the Stage Manager strip and Todo sidebar removed; used by single-window snapping.
+    let layoutScreens: ScreenProvider
     let controller: SnapController
+    private(set) lazy var multiWindow = MultiWindowCoordinator(
+        settings: settings, windows: windows, screens: screens, snap: controller, isTrusted: { [weak self] in self?.trusted ?? false })
     let debugLog = DebugLog(isEnabled: { HiddenPreferences().debugLogging })
     private(set) lazy var router = AutomationRouter(settings: settings, host: self, log: debugLog)
     private(set) lazy var dragMonitor = DragSnapMonitor(
-        windows: windows, screens: screens, controller: controller, settings: settings, overlay: overlay)
+        windows: windows, screens: layoutScreens, controller: controller, settings: settings, overlay: overlay)
 
     private(set) lazy var input = InputCoordinator(
-        settings: settings, windows: windows, screens: screens, controller: controller, overlay: overlay,
+        settings: settings, windows: windows, screens: layoutScreens, controller: controller, overlay: overlay,
         isWindowDrag: { [weak self] in self?.dragMonitor.isWindowDrag ?? false })
 
     @Published private(set) var trusted = AXIsProcessTrusted()
@@ -39,7 +44,10 @@ final class AppModel: ObservableObject, AutomationHost {
 
     private init() {
         let store = settings
-        controller = SnapController(windows: windows, screens: screens, options: { store.get(.layoutOptions) })
+        layoutScreens = ReservedScreenProvider(
+            base: screens, options: { store.get(.multiWindowOptions) },
+            stageManagerActive: MultiWindowCoordinator.isStageManagerActive)
+        controller = SnapController(windows: windows, screens: layoutScreens, options: { store.get(.layoutOptions) })
         controller.onMinimumSizeReached = { [hud] _, actual in hud.show(near: actual) }
         windows.compatibility = WindowCompatibility(settings: settings)
         windows.debugLog = debugLog
@@ -65,6 +73,7 @@ final class AppModel: ObservableObject, AutomationHost {
             .sink { [weak self] _ in self?.refreshIgnoreState() }
             .store(in: &cancellables)
 
+        multiWindow.start()
         applyUpdateSettings()
         settings.changes
             .filter { $0 == SettingKey<Bool>.automaticUpdateChecks.name }
@@ -79,7 +88,8 @@ final class AppModel: ObservableObject, AutomationHost {
 
     func perform(_ action: SnapAction) {
         if !trusted { showOnboarding(); return }
-        let changed = controller.perform(action)
+        // MARK: add-multi-window-modes
+        let changed = action.isMultiWindow ? multiWindow.controller.perform(action) : controller.perform(action)
         debugLog.log("perform \(action.name) -> \(changed ? "moved" : "no change")")
     }
 

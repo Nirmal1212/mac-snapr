@@ -23,11 +23,11 @@ final class SystemScreenProvider: ScreenProvider {
 
 /// Accessibility-API-backed windows of the frontmost app other than Snapr.
 final class AXWindowProvider: WindowProvider {
-    private var elements: [WindowID: AXUIElement] = [:]
+    var elements: [WindowID: AXUIElement] = [:]  // internal for AXWindowProvider+List (add-multi-window-modes)
     /// Per-app quirks (native resize list, Enhanced UI handling); set by `AppModel`.
     var compatibility: WindowCompatibility?
     var debugLog: DebugLog?
-    private var lastExternalPID: pid_t?
+    private(set) var lastExternalPID: pid_t?  // read by AXWindowProvider+List (add-multi-window-modes)
     private var token: NSObjectProtocol?
     /// Longest an unresponsive app may block an Accessibility call on the main run loop.
     static let messagingTimeout: Float = 0.25
@@ -147,7 +147,7 @@ final class AXWindowProvider: WindowProvider {
 
     // MARK: - Helpers
 
-    private func info(for element: AXUIElement) -> WindowInfo? {
+    func info(for element: AXUIElement) -> WindowInfo? {
         guard let frame = Self.frame(of: element) else { return nil }
         // Full-screen windows live in their own Space and are not supported.
         if Self.bool(element, "AXFullScreen") == true { return nil }
@@ -160,7 +160,7 @@ final class AXWindowProvider: WindowProvider {
             canResize: Self.isSettable(element, kAXSizeAttribute))
     }
 
-    private static func element(_ parent: AXUIElement, _ attribute: String) -> AXUIElement? {
+    static func element(_ parent: AXUIElement, _ attribute: String) -> AXUIElement? {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(parent, attribute as CFString, &value) == .success,
             let value, CFGetTypeID(value) == AXUIElementGetTypeID()
@@ -168,19 +168,19 @@ final class AXWindowProvider: WindowProvider {
         return (value as! AXUIElement)  // swiftlint:disable:this force_cast
     }
 
-    private static func string(_ element: AXUIElement, _ attribute: String) -> String? {
+    static func string(_ element: AXUIElement, _ attribute: String) -> String? {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else { return nil }
         return value as? String
     }
 
-    private static func bool(_ element: AXUIElement, _ attribute: String) -> Bool? {
+    static func bool(_ element: AXUIElement, _ attribute: String) -> Bool? {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else { return nil }
         return (value as? NSNumber)?.boolValue
     }
 
-    private static func isSettable(_ element: AXUIElement, _ attribute: String) -> Bool {
+    static func isSettable(_ element: AXUIElement, _ attribute: String) -> Bool {
         var settable: DarwinBoolean = false
         return AXUIElementIsAttributeSettable(element, attribute as CFString, &settable) == .success && settable.boolValue
     }

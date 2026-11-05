@@ -14,9 +14,9 @@
 - [x] 3.3 `NewWindowMonitor` with tests
 
 ## 4. App Integration
-- [ ] 4.1 AX `WindowListProvider`, routing in `AppModel`, reserved-area screen decorator
-- [ ] 4.2 Stack badge and new-window timer
-- [ ] 4.3 Settings section
+- [x] 4.1 AX `WindowListProvider`, routing in `AppModel`, reserved-area screen decorator
+- [x] 4.2 Stack badge and new-window timer
+- [x] 4.3 Settings section
 
 ## 5. Verification
-- [ ] 5.1 `openspec validate --all --strict`, `swift build`, `swift test`
+- [x] 5.1 `openspec validate --all --strict`, `swift build`, `swift test`
