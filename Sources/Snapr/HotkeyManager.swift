@@ -8,6 +8,8 @@ final class HotkeyManager {
     private var actionsByID: [UInt32: SnapAction] = [:]
     private var handler: EventHandlerRef?
     private(set) var current = ShortcutMap()
+    /// When false (an ignored app is frontmost) no hotkeys are registered, so key presses reach that app.
+    var enabled = true
     private static let signature: OSType = 0x534E_4150  // 'SNAP'
 
     /// Installs the Carbon event handler. Call once.
@@ -36,6 +38,7 @@ final class HotkeyManager {
     func register(_ map: ShortcutMap) -> [SnapAction] {
         current = map
         unregisterAll()
+        guard enabled else { return [] }
         var failed: [SnapAction] = []
         for (index, binding) in map.bindings.enumerated() {
             let id = UInt32(index + 1)

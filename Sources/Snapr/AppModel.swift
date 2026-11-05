@@ -4,7 +4,7 @@ import Combine
 import SnaprCore
 
 /// Composition root: owns providers, controller, hotkeys, drag monitor and permission state.
-final class AppModel: ObservableObject {
+final class AppModel: ObservableObject, AutomationHost {
     static let shared = AppModel()
 
     let settings = SettingsStore()
@@ -13,20 +13,28 @@ final class AppModel: ObservableObject {
     let hotkeys = HotkeyManager()
     let overlay = PreviewOverlay()
     let controller: SnapController
+    let debugLog = DebugLog(isEnabled: { HiddenPreferences().debugLogging })
+    private(set) lazy var router = AutomationRouter(settings: settings, host: self, log: debugLog)
     private(set) lazy var dragMonitor = DragSnapMonitor(
         windows: windows, screens: screens, controller: controller, settings: settings, overlay: overlay)
 
     @Published private(set) var trusted = AXIsProcessTrusted()
     @Published private(set) var dragRunning = false
     @Published var failedShortcuts: [SnapAction] = []
+    /// The most recent frontmost app other than Snapr (target of "Ignore app").
+    @Published private(set) var targetApp: (bundleID: String, name: String)?
+    @Published var configMessage: String?
 
     private var cancellables: Set<AnyCancellable> = []
     private var pollTimer: Timer?
     private let onboarding = WindowPresenter()
     private let settingsWindow = WindowPresenter()
+    private let debugWindow = WindowPresenter()
 
     private init() {
         controller = SnapController(windows: windows, screens: screens)
+        windows.compatibility = WindowCompatibility(settings: settings)
+        windows.debugLog = debugLog
         settings.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
@@ -35,11 +43,18 @@ final class AppModel: ObservableObject {
     func start() {
         hotkeys.onAction = { [weak self] action in self?.perform(action) }
         hotkeys.install()
+        loadLaunchConfig()
+        trackFrontmostApp()
         applyShortcuts()
         settings.changes
             .filter { $0 == SettingKey<ShortcutMap>.shortcuts.name }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.applyShortcuts() }
+            .store(in: &cancellables)
+        settings.changes
+            .filter { $0 == SettingKey<[String]>.ignoredApps.name }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshIgnoreState() }
             .store(in: &cancellables)
 
         refreshTrust()
@@ -49,7 +64,104 @@ final class AppModel: ObservableObject {
 
     func perform(_ action: SnapAction) {
         if !trusted { showOnboarding(); return }
-        controller.perform(action)
+        let changed = controller.perform(action)
+        debugLog.log("perform \(action.name) -> \(changed ? "moved" : "no change")")
+    }
+
+    // MARK: - Automation
+
+    var frontmostBundleID: String? { targetApp?.bundleID }
+
+    /// Entry point for `snapr://` URLs.
+    func handle(url: URL) { router.handle(url) }
+
+    // MARK: - Ignored apps
+
+    var targetAppIgnored: Bool { settings.isIgnored(targetApp?.bundleID) }
+
+    func toggleIgnoreTargetApp() {
+        guard let id = targetApp?.bundleID else { return }
+        if settings.isIgnored(id) { settings.unignore(id) } else { settings.ignore(id) }
+    }
+
+    /// Follows app activation: remembers the last external app and suspends hotkeys while an ignored app is frontmost.
+    private func trackFrontmostApp() {
+        updateTarget(NSWorkspace.shared.frontmostApplication)
+        NSWorkspace.shared.notificationCenter
+            .publisher(for: NSWorkspace.didActivateApplicationNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] note in
+                self?.updateTarget(note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateTarget(_ app: NSRunningApplication?) {
+        guard let app, app.processIdentifier != ProcessInfo.processInfo.processIdentifier,
+            let id = app.bundleIdentifier
+        else { return }
+        targetApp = (id, app.localizedName ?? id)
+        refreshIgnoreState()
+    }
+
+    private func refreshIgnoreState() {
+        let enabled = !targetAppIgnored
+        guard enabled != hotkeys.enabled else { return }
+        hotkeys.enabled = enabled
+        hotkeys.register(hotkeys.current)
+        debugLog.log("shortcuts \(enabled ? "enabled" : "suspended") for \(targetApp?.bundleID ?? "?")")
+    }
+
+    // MARK: - Config
+
+    private func loadLaunchConfig() {
+        guard let url = ConfigDocument.defaultFileURL(), FileManager.default.fileExists(atPath: url.path) else { return }
+        do {
+            let skipped = try ConfigDocument.decode(from: Data(contentsOf: url)).apply(to: settings)
+            debugLog.log("loaded \(url.path), skipped: \(skipped)")
+        } catch {
+            debugLog.log("could not load \(url.path): \(error.localizedDescription)")
+        }
+    }
+
+    func exportConfig() {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "snapr-config.json"
+        panel.allowedContentTypes = [.json]
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try ConfigDocument.export(from: settings).encoded().write(to: url)
+            configMessage = "Exported to \(url.lastPathComponent)"
+        } catch {
+            configMessage = "Export failed: \(error.localizedDescription)"
+        }
+    }
+
+    func importConfig() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let skipped = try ConfigDocument.decode(from: Data(contentsOf: url)).apply(to: settings)
+            configMessage = skipped.isEmpty
+                ? "Imported \(url.lastPathComponent)"
+                : "Imported; skipped unknown actions: \(skipped.joined(separator: ", "))"
+            debugLog.log("imported \(url.path), skipped: \(skipped)")
+        } catch {
+            configMessage = "Import failed: \(error.localizedDescription)"
+        }
+    }
+
+    func applySpectacleShortcuts() { settings.set(ShortcutPresets.spectacle(), for: .shortcuts) }
+    func restoreDefaultShortcuts() { settings.set(ShortcutPresets.defaults(), for: .shortcuts) }
+
+    func showDebugLog() {
+        debugWindow.show(title: "Snapr Debug Log", size: CGSize(width: 640, height: 420)) {
+            DebugLogView(log: debugLog)
+        }
     }
 
     func applyShortcuts() {
