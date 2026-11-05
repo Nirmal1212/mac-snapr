@@ -29,6 +29,16 @@ final class AppModel: ObservableObject, AutomationHost {
         settings: settings, windows: windows, screens: layoutScreens, controller: controller, overlay: overlay,
         isWindowDrag: { [weak self] in self?.dragMonitor.isWindowDrag ?? false })
 
+    // MARK: add-custom-layouts-and-spaces (logic lives in AppModel+CustomLayouts.swift)
+    private(set) lazy var layoutStore = CustomLayoutStore(settings: settings)
+    private(set) lazy var spaceMover = PrivateSpaceMover(provider: windows)
+    private(set) lazy var spaces = SpaceActionController(
+        settings: settings, windows: windows, mover: spaceMover, log: debugLog)
+    private(set) lazy var runner = RuntimeActionRunner(
+        store: layoutStore, controller: controller, windows: windows, screens: screens, lister: windows,
+        spaces: spaces, options: { [settings] in settings.get(.layoutOptions) })
+    @Published var layoutMessage: String?
+
     @Published private(set) var trusted = AXIsProcessTrusted()
     @Published private(set) var dragRunning = false
     @Published var failedShortcuts: [SnapAction] = []
@@ -45,7 +55,7 @@ final class AppModel: ObservableObject, AutomationHost {
     private init() {
         let store = settings
         layoutScreens = ReservedScreenProvider(
-            base: screens, options: { store.get(.multiWindowOptions) },
+            base: screens, settings: store,
             stageManagerActive: MultiWindowCoordinator.isStageManagerActive)
         controller = SnapController(windows: windows, screens: layoutScreens, options: { store.get(.layoutOptions) })
         controller.onMinimumSizeReached = { [hud] _, actual in hud.show(near: actual) }
@@ -58,12 +68,16 @@ final class AppModel: ObservableObject, AutomationHost {
 
     func start() {
         hotkeys.onAction = { [weak self] action in self?.perform(action) }
+        hotkeys.onRuntimeAction = { [weak self] action in self?.perform(action) }
         hotkeys.install()
         loadLaunchConfig()
         trackFrontmostApp()
         applyShortcuts()
         settings.changes
-            .filter { $0 == SettingKey<ShortcutMap>.shortcuts.name }
+            .filter {
+                [SettingKey<ShortcutMap>.shortcuts.name, SettingKey<LossyArray<CustomZone>>.customZones.name,
+                    SettingKey<LossyArray<SavedLayout>>.savedLayouts.name].contains($0)
+            }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.applyShortcuts() }
             .store(in: &cancellables)
@@ -188,7 +202,8 @@ final class AppModel: ObservableObject, AutomationHost {
     }
 
     func applyShortcuts() {
-        failedShortcuts = hotkeys.register(settings.get(.shortcuts))
+        let map = settings.get(.shortcuts)
+        failedShortcuts = hotkeys.register(map, runtime: layoutStore.hotkeyBindings(builtIn: map))
     }
 
     /// Pushes the setting to Sparkle. At launch only an explicit "off" is applied: setting `true` in code

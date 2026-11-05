@@ -47,7 +47,7 @@ struct MultiWindowSettingsSections: View {
                 get: { options.newWindowAction ?? "" },
                 set: { new in update { $0.newWindowAction = new.isEmpty ? nil : new } })) {
                 Text("Nothing").tag("")
-                ForEach(SnapAction.allCases.filter { $0 != .toggleTodo && $0 != .restore }, id: \.self) {
+                ForEach(SnapAction.allCases.filter { !$0.isMultiWindow && $0 != .restore }, id: \.self) {
                     Text($0.title).tag($0.name)
                 }
             }

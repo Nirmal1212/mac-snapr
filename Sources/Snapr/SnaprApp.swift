@@ -53,6 +53,7 @@ struct MenuContent: View {
                 Divider()
             }
         }
+        customLayoutMenus
         if let app = model.targetApp {
             Button(model.targetAppIgnored ? "Stop Ignoring \(app.name)" : "Ignore \(app.name)") {
                 model.toggleIgnoreTargetApp()
@@ -65,6 +66,42 @@ struct MenuContent: View {
             .disabled(!model.updater.isAvailable)
         Button("Quit Snapr") { NSApplication.shared.terminate(nil) }
             .keyboardShortcut("q")
+    }
+
+    // MARK: add-custom-layouts-and-spaces
+
+    @ViewBuilder
+    private var customLayoutMenus: some View {
+        let zones = model.customZones
+        let layouts = model.savedLayouts
+        if !zones.isEmpty {
+            Menu("Custom Zones") {
+                ForEach(zones) { zone in
+                    Button(runtimeLabel(zone.name, zone.shortcut)) { model.perform(zone.action) }
+                }
+            }
+        }
+        if !layouts.isEmpty {
+            Menu("Saved Layouts") {
+                ForEach(layouts) { layout in
+                    Button(runtimeLabel(layout.name, layout.shortcut)) { model.perform(layout.action) }
+                }
+            }
+        }
+        if model.spaceActionsActive {
+            Menu("Move to Space") {
+                Button("Next Space") { model.perform(.space(.next)) }
+                Button("Previous Space") { model.perform(.space(.previous)) }
+                ForEach(1...9, id: \.self) { n in
+                    Button("Space \(n)") { model.perform(.space(.index(n))) }
+                }
+            }
+        }
+        if !zones.isEmpty || !layouts.isEmpty || model.spaceActionsActive { Divider() }
+    }
+
+    private func runtimeLabel(_ title: String, _ combo: KeyCombo?) -> String {
+        combo.map { "\(title)    \($0.displayString)" } ?? title
     }
 
     @ViewBuilder

@@ -333,11 +333,88 @@ final class NewWindowMonitorTests: XCTestCase {
         XCTAssertEqual(applied().count, 1)
     }
 
-    func testMultiWindowActionCanBeConfigured() {
+    func testMultiWindowActionIsNotAllowedAsNewWindowAction() {
         let (monitor, list, applied, _) = make(action: "tile-all")
+        XCTAssertFalse(monitor.isEnabled)
         monitor.scan()
         list.windows.append(ManagedWindow(id: WindowID(2), frame: CGRect(x: 0, y: 0, width: 300, height: 300)))
         monitor.scan()
-        XCTAssertEqual(applied().first?.0, .tileAll)
+        XCTAssertTrue(applied().isEmpty)
+    }
+
+    func testUnminimizedOrReappearingWindowIsNotNew() {
+        let (monitor, list, applied, _) = make(action: "left-half")
+        monitor.scan()
+        let extra = ManagedWindow(id: WindowID(2), frame: CGRect(x: 0, y: 0, width: 300, height: 300))
+        list.windows.append(extra)
+        XCTAssertEqual(monitor.scan(), [WindowID(2)])
+        // Minimized / other Space: dropped from the listing for many scans, then back.
+        list.windows.removeLast()
+        for _ in 0..<50 { monitor.scan() }
+        list.windows.append(extra)
+        XCTAssertEqual(monitor.scan(), [])
+        XCTAssertEqual(applied().count, 1)
+    }
+
+    func testTrackedIdsAreBounded() {
+        let (monitor, list, _, _) = make(action: "left-half")
+        monitor.scan()
+        for i in 10..<(10 + NewWindowMonitor.maxTracked + 50) {
+            list.windows = [ManagedWindow(id: WindowID(i), frame: CGRect(x: 0, y: 0, width: 300, height: 300))]
+            monitor.scan()
+        }
+        // Oldest ids were forgotten; the newest is still known.
+        XCTAssertEqual(monitor.scan(), [])
+    }
+}
+
+final class MultiWindowSecurityTests: XCTestCase {
+    func testTodoActionsRefusedFromURL() {
+        final class Host: AutomationHost {
+            var performed: [SnapAction] = []
+            func perform(_ action: SnapAction) { performed.append(action) }
+        }
+        let host = Host()
+        let router = AutomationRouter(settings: SettingsStore(storage: MemorySettingsStorage()), host: host)
+        XCTAssertEqual(
+            router.handle(URL(string: "snapr://execute-action?name=toggle-todo")!), .refused("toggle-todo"))
+        XCTAssertEqual(
+            router.handle(URL(string: "snapr://execute-action?name=reflow-todo")!), .refused("reflow-todo"))
+        XCTAssertTrue(host.performed.isEmpty)
+        XCTAssertEqual(router.handle(URL(string: "snapr://execute-action?name=tile-all")!), .performed(.tileAll))
+    }
+
+    func testImportSanitizesOptions() throws {
+        var options = MultiWindowOptions()
+        options.newWindowAction = "toggle-todo"
+        options.todo.bundleID = "bad id; rm"
+        let store = SettingsStore(storage: MemorySettingsStorage())
+        ConfigDocument(multiWindow: options).apply(to: store)
+        XCTAssertNil(store.get(.multiWindowOptions).newWindowAction)
+        XCTAssertNil(store.get(.multiWindowOptions).todo.bundleID)
+        options.newWindowAction = "no-such"
+        XCTAssertNil(options.sanitized().newWindowAction)
+        options.newWindowAction = "left-half"
+        options.todo.bundleID = "com.example.todo"
+        XCTAssertEqual(options.sanitized(), options)
+    }
+
+    func testReservedProviderCachesUntilSettingsChange() {
+        let store = SettingsStore(storage: MemorySettingsStorage())
+        var stageCalls = 0
+        let screen = ScreenInfo(
+            id: 1, frame: CGRect(x: 0, y: 0, width: 1000, height: 800),
+            visibleFrame: CGRect(x: 0, y: 0, width: 1000, height: 800))
+        let provider = ReservedScreenProvider(
+            base: MockScreenProvider([screen]), settings: store, stageManagerActive: { stageCalls += 1; return true })
+        _ = provider.screens()
+        _ = provider.screens()
+        XCTAssertEqual(stageCalls, 1)
+        XCTAssertEqual(provider.screens()[0].visibleFrame.minX, 190)
+        var options = MultiWindowOptions()
+        options.stageManager.stripWidth = 100
+        store.set(options, for: .multiWindowOptions)
+        XCTAssertEqual(provider.screens()[0].visibleFrame.minX, 100)
+        XCTAssertEqual(stageCalls, 2)
     }
 }

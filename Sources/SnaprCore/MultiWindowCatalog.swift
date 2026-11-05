@@ -34,6 +34,10 @@ public enum MultiWindowCatalog {
 }
 
 public extension SnapAction {
+    /// Actions that change persistent state (Todo mode) and so must not run from `snapr://` URLs,
+    /// which any web page can open. Menu and hotkeys still work.
+    var isURLRestricted: Bool { self == .toggleTodo || self == .reflowTodo }
+
     /// True for actions handled by `MultiWindowController` instead of `SnapController`.
     var isMultiWindow: Bool { MultiWindowCatalog.isMultiWindow(self) }
 }

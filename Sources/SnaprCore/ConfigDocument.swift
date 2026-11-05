@@ -17,14 +17,21 @@ public struct ConfigDocument: Codable, Equatable {
     public var nativeResizeApps: [String]?
     /// Keyed by action name. Only customizations (differences from default) are exported.
     public var shortcuts: [String: ShortcutEntry]?
+    // MARK: add-custom-layouts-and-spaces
+    /// Custom zones and saved layouts. Absent = leave current values; elements that fail to decode are dropped.
+    public var customZones: [CustomZone]?
+    public var savedLayouts: [SavedLayout]?
     // MARK: add-multi-window-modes
     public var multiWindow: MultiWindowOptions?
 
     public init(
         version: Int? = ConfigDocument.currentVersion, dragSnapEnabled: Bool? = nil, ignoredApps: [String]? = nil,
         nativeResizeApps: [String]? = nil, shortcuts: [String: ShortcutEntry]? = nil,
+        customZones: [CustomZone]? = nil, savedLayouts: [SavedLayout]? = nil,
         multiWindow: MultiWindowOptions? = nil
     ) {
+        self.customZones = customZones
+        self.savedLayouts = savedLayouts
         self.version = version
         self.dragSnapEnabled = dragSnapEnabled
         self.ignoredApps = ignoredApps
@@ -34,7 +41,7 @@ public struct ConfigDocument: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case version, dragSnapEnabled, ignoredApps, nativeResizeApps, shortcuts
+        case version, dragSnapEnabled, ignoredApps, nativeResizeApps, shortcuts, customZones, savedLayouts
         case multiWindow  // add-multi-window-modes
     }
 
@@ -46,6 +53,8 @@ public struct ConfigDocument: Codable, Equatable {
         nativeResizeApps = (try? c.decodeIfPresent([String].self, forKey: .nativeResizeApps)) ?? nil
         let raw = (try? c.decodeIfPresent([String: LenientEntry].self, forKey: .shortcuts)) ?? nil
         shortcuts = raw?.compactMapValues(\.entry)
+        customZones = ((try? c.decodeIfPresent(LossyArray<CustomZone>.self, forKey: .customZones)) ?? nil)?.elements
+        savedLayouts = ((try? c.decodeIfPresent(LossyArray<SavedLayout>.self, forKey: .savedLayouts)) ?? nil)?.elements
         multiWindow = (try? c.decodeIfPresent(MultiWindowOptions.self, forKey: .multiWindow)) ?? nil  // add-multi-window-modes
     }
 
@@ -56,6 +65,8 @@ public struct ConfigDocument: Codable, Equatable {
         try c.encodeIfPresent(ignoredApps, forKey: .ignoredApps)
         try c.encodeIfPresent(nativeResizeApps, forKey: .nativeResizeApps)
         try c.encodeIfPresent(shortcuts?.mapValues(LenientEntry.init), forKey: .shortcuts)
+        try c.encodeIfPresent(customZones, forKey: .customZones)
+        try c.encodeIfPresent(savedLayouts, forKey: .savedLayouts)
         try c.encodeIfPresent(multiWindow, forKey: .multiWindow)  // add-multi-window-modes
     }
 
@@ -106,6 +117,7 @@ public struct ConfigDocument: Codable, Equatable {
         return ConfigDocument(
             dragSnapEnabled: settings.get(.dragSnapEnabled), ignoredApps: settings.get(.ignoredApps),
             nativeResizeApps: settings.get(.nativeResizeApps), shortcuts: shortcuts,
+            customZones: settings.get(.customZones).elements, savedLayouts: settings.get(.savedLayouts).elements,
             multiWindow: settings.get(.multiWindowOptions))
     }
 
@@ -116,7 +128,7 @@ public struct ConfigDocument: Codable, Equatable {
         if let dragSnapEnabled { settings.set(dragSnapEnabled, for: .dragSnapEnabled) }
         if let ignoredApps { settings.set(Array(ignoredApps.prefix(SettingsStore.maxIgnoredApps)), for: .ignoredApps) }
         if let nativeResizeApps { settings.set(nativeResizeApps, for: .nativeResizeApps) }
-        if let multiWindow { settings.set(multiWindow, for: .multiWindowOptions) }  // add-multi-window-modes
+        if let multiWindow { settings.set(multiWindow.sanitized(), for: .multiWindowOptions) }  // add-multi-window-modes
         var skipped: [String] = []
         if let shortcuts, !shortcuts.isEmpty {
             var map = settings.get(.shortcuts)
@@ -135,6 +147,14 @@ public struct ConfigDocument: Codable, Equatable {
                 }
             }
             settings.set(map, for: .shortcuts)
+        }
+        if customZones != nil || savedLayouts != nil {
+            // After the shortcut map so runtime shortcuts are checked against the final built-in bindings.
+            let clean = CustomLayoutStore.sanitized(
+                zones: customZones, layouts: savedLayouts, builtIn: settings.get(.shortcuts))
+            if let zones = clean.zones { settings.set(LossyArray(zones), for: .customZones) }
+            if let layouts = clean.layouts { settings.set(LossyArray(layouts), for: .savedLayouts) }
+            skipped += clean.skipped
         }
         return skipped
     }

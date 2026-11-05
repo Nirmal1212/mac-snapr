@@ -98,6 +98,23 @@ public struct MultiWindowOptions: Codable, Equatable {
     }
 }
 
+public extension MultiWindowOptions {
+    /// Drops values that must not come from an imported file: a new-window action that is unknown or
+    /// multi-window, and a Todo bundle id that is not a valid identifier.
+    func sanitized() -> MultiWindowOptions {
+        var copy = self
+        if let name = copy.newWindowAction {
+            if let action = ActionRegistry.action(named: name), !action.isMultiWindow, action != .restore {
+                // valid
+            } else {
+                copy.newWindowAction = nil
+            }
+        }
+        if let id = copy.todo.bundleID, !AutomationURL.isValidBundleID(id) { copy.todo.bundleID = nil }
+        return copy
+    }
+}
+
 public extension SettingKey {
     /// Multi-window modes (tiling, cascade, stack, Todo, Stage Manager, new-window action).
     static var multiWindowOptions: SettingKey<MultiWindowOptions> {

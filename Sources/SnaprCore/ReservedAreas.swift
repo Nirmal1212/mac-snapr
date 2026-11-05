@@ -1,4 +1,6 @@
+import Combine
 import CoreGraphics
+import Foundation
 
 /// Pure rules for screen regions that layouts must avoid: the Stage Manager strip and the Todo sidebar.
 public enum ReservedAreas {
@@ -63,10 +65,47 @@ public final class ReservedScreenProvider: ScreenProvider {
         self.stageManagerActive = stageManagerActive
     }
 
+    private var cachedOptions: MultiWindowOptions?
+    private var cachedStage: (value: Bool, at: Date)?
+    private var cacheEnabled = false
+    private var subscription: AnyCancellable?
+    /// How long the Stage Manager preference is reused.
+    static let stageManagerTTL: TimeInterval = 2
+
+    /// Caching variant: options are read once and re-read after a settings change; the Stage Manager
+    /// preference is re-read at most every two seconds. `screens()` runs on every drag event.
+    public convenience init(
+        base: ScreenProvider, settings: SettingsStore, stageManagerActive: @escaping () -> Bool
+    ) {
+        self.init(base: base, options: { settings.get(.multiWindowOptions) }, stageManagerActive: stageManagerActive)
+        cacheEnabled = true
+        subscription = settings.changes
+            .filter { $0 == SettingKey<MultiWindowOptions>.multiWindowOptions.name }
+            .sink { [weak self] _ in self?.invalidate() }
+    }
+
+    public func invalidate() {
+        cachedOptions = nil
+        cachedStage = nil
+    }
+
     public func screens() -> [ScreenInfo] {
         let raw = base.screens()
-        let options = options()
-        let active = stageManagerActive()
+        let options: MultiWindowOptions
+        let active: Bool
+        if cacheEnabled {
+            options = cachedOptions ?? self.options()
+            cachedOptions = options
+            if let stage = cachedStage, Date().timeIntervalSince(stage.at) < Self.stageManagerTTL {
+                active = stage.value
+            } else {
+                active = stageManagerActive()
+                cachedStage = (active, Date())
+            }
+        } else {
+            options = self.options()
+            active = stageManagerActive()
+        }
         let todoID = ReservedAreas.todoScreen(in: raw, options: options)?.id
         return raw.map { screen in
             var copy = screen

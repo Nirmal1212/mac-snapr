@@ -16,6 +16,12 @@ Builds on `LayoutEngine` (usable area, gaps, pixel alignment) and `SnapControlle
 - **New-window action:** `NewWindowMonitor` diffs window ids between scans; the first scan only records a baseline. The app scans on a 1 s timer that runs only while the option is set.
 - **Window order:** `allWindows()` lists the frontmost app first. Tiling sorts by position so repeated runs are stable.
 
+## Security
+- `snapr://` URLs can be opened by any web page. `toggle-todo` and `reflow-todo` persist state (Todo mode on, Todo app = frontmost app) and are therefore refused by `AutomationRouter` (`.refused`, via `SnapAction.isURLRestricted`); the menu and hotkeys still run them. The other multi-window actions only move windows and stay reachable.
+- The new-window action may not be a multi-window action. Config import sanitizes `newWindowAction` (must exist in `ActionRegistry`, not multi-window) and `todo.bundleID` (valid bundle id) before storing.
+- `NewWindowMonitor` keeps seen window ids (bounded to 2000, least recently seen evicted), so unminimized, unhidden or Space-switched windows are not mistaken for new ones.
+- `ReservedScreenProvider` caches the decoded options (invalidated on settings change) and the Stage Manager preference (2 s), since it runs on every drag event. The AX element cache is pruned past 500 entries.
+
 ## Risks / Trade-offs
 - AX window listing across apps is slower than the focused-window path; only user-triggered actions and the opt-in new-window timer use it.
 - Stage Manager strip width is user-configured, not detected.

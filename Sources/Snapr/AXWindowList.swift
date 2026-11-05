@@ -6,6 +6,7 @@ import SnaprCore
 extension AXWindowProvider: WindowListProvider {
     /// Upper bound on windows listed per call, so a runaway app cannot stall an action.
     private static let maxWindows = 200
+    private static let maxCachedElements = 500
 
     func allWindows() -> [ManagedWindow] {
         guard AXIsProcessTrusted() else { return [] }
@@ -24,7 +25,8 @@ extension AXWindowProvider: WindowListProvider {
                 let windows = value as? [AXUIElement]
             else { continue }
             for window in windows {
-                guard result.count < Self.maxWindows else { return result }
+                guard result.count < Self.maxWindows else { return prune(keeping: result) }
+                AXUIElementSetMessagingTimeout(window, Self.messagingTimeout)
                 guard Self.string(window, kAXSubroleAttribute) == kAXStandardWindowSubrole as String,
                     Self.bool(window, kAXMinimizedAttribute) != true,
                     let info = info(for: window)
@@ -35,6 +37,16 @@ extension AXWindowProvider: WindowListProvider {
                         isActiveApp: app.processIdentifier == front, canMove: info.canMove,
                         canResize: info.canResize))
             }
+        }
+        return prune(keeping: result)
+    }
+
+    /// Bounds the element cache: past the cap, ids not in the latest listing are dropped (they are
+    /// re-registered when seen again).
+    private func prune(keeping result: [ManagedWindow]) -> [ManagedWindow] {
+        if elements.count > Self.maxCachedElements {
+            let live = Set(result.map(\.id))
+            elements = elements.filter { live.contains($0.key) }
         }
         return result
     }

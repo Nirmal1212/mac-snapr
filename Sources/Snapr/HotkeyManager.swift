@@ -4,6 +4,12 @@ import SnaprCore
 /// Global hotkeys through Carbon `RegisterEventHotKey` (no extra permission needed).
 final class HotkeyManager {
     var onAction: ((SnapAction) -> Void)?
+    /// Called for custom zone / saved layout / Space shortcuts.
+    var onRuntimeAction: ((RuntimeAction) -> Void)?
+    private var runtimeActionsByID: [UInt32: RuntimeAction] = [:]
+    private(set) var currentRuntime: [(action: RuntimeAction, combo: KeyCombo)] = []
+    /// Runtime hotkey ids start here so they never collide with built-in ones.
+    private static let runtimeIDBase: UInt32 = 10_000
     private var refs: [EventHotKeyRef] = []
     private var actionsByID: [UInt32: SnapAction] = [:]
     private var handler: EventHandlerRef?
@@ -35,8 +41,9 @@ final class HotkeyManager {
     /// Replaces all registrations with the bindings in `map`. Returns actions the system refused
     /// (usually because another app owns the combo).
     @discardableResult
-    func register(_ map: ShortcutMap) -> [SnapAction] {
+    func register(_ map: ShortcutMap, runtime: [(action: RuntimeAction, combo: KeyCombo)]? = nil) -> [SnapAction] {
         current = map
+        if let runtime { currentRuntime = runtime }
         unregisterAll()
         guard enabled else { return [] }
         var failed: [SnapAction] = []
@@ -53,6 +60,17 @@ final class HotkeyManager {
                 failed.append(binding.action)
             }
         }
+        for (index, binding) in currentRuntime.enumerated() {
+            let id = Self.runtimeIDBase + UInt32(index)
+            var ref: EventHotKeyRef?
+            let status = RegisterEventHotKey(
+                binding.combo.keyCode, binding.combo.modifiers.rawValue,
+                EventHotKeyID(signature: Self.signature, id: id), GetApplicationEventTarget(), 0, &ref)
+            if status == noErr, let ref {
+                refs.append(ref)
+                runtimeActionsByID[id] = binding.action
+            }
+        }
         return failed
     }
 
@@ -64,9 +82,11 @@ final class HotkeyManager {
         refs.forEach { UnregisterEventHotKey($0) }
         refs.removeAll()
         actionsByID.removeAll()
+        runtimeActionsByID.removeAll()
     }
 
     private func fire(_ id: UInt32) {
+        if let runtime = runtimeActionsByID[id] { onRuntimeAction?(runtime); return }
         guard let action = actionsByID[id] else { return }
         onAction?(action)
     }

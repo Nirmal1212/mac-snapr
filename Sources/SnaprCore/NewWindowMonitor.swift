@@ -6,7 +6,10 @@ public final class NewWindowMonitor {
     private let list: WindowListProvider
     private let options: () -> MultiWindowOptions
     private let apply: (SnapAction, ManagedWindow) -> Void
-    private var known: Set<WindowID> = []
+    /// Window id -> scan number it was last seen. Ids are kept while a window is minimized, hidden or on
+    /// another Space (the listing omits those), so it does not look new when it comes back.
+    private var known: [WindowID: Int] = [:]
+    private var scanNumber = 0
     private var started = false
 
     /// Windows smaller than this are still being created; they are retried on the next scan.
@@ -27,36 +30,39 @@ public final class NewWindowMonitor {
     public var isEnabled: Bool { configuredAction() != nil }
 
     private func configuredAction() -> SnapAction? {
-        options().newWindowAction.flatMap(ActionRegistry.action(named:))
+        options().newWindowAction.flatMap(ActionRegistry.action(named:)).flatMap { $0.isMultiWindow ? nil : $0 }
     }
 
     /// Checks for new windows. Returns the windows the action was applied to.
     @discardableResult
     public func scan() -> [WindowID] {
         guard let action = configuredAction() else {
-            known = []
+            known = [:]
             started = false
             return []
         }
         let current = list.allWindows()
-        defer { if known.count > Self.maxTracked { known = Set(current.map(\.id)) } }
+        scanNumber += 1
         guard started else {
-            known = Set(current.map(\.id))
+            known = Dictionary(current.map { ($0.id, scanNumber) }, uniquingKeysWith: { a, _ in a })
             started = true
             return []
         }
         var handled: [WindowID] = []
-        var next: Set<WindowID> = []
         for window in current {
-            if known.contains(window.id) {
-                next.insert(window.id)
+            if known[window.id] != nil {
+                known[window.id] = scanNumber
             } else if window.frame.width >= Self.minimumSize.width, window.frame.height >= Self.minimumSize.height {
-                next.insert(window.id)
+                known[window.id] = scanNumber
                 handled.append(window.id)
                 apply(action, window)
             }
         }
-        known = next
+        if known.count > Self.maxTracked {
+            // Forget the ids unseen the longest.
+            let keep = known.sorted { $0.value > $1.value }.prefix(Self.maxTracked)
+            known = Dictionary(uniqueKeysWithValues: keep.map { ($0.key, $0.value) })
+        }
         return handled
     }
 }
