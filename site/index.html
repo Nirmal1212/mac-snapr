@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snapr: free window snapping for your Mac menu bar</title>
+<meta name="description" content="Snapr is a free, local-only macOS menu bar utility that snaps windows to halves, quarters, thirds and more with keyboard shortcuts or by dragging to a screen edge. No telemetry.">
+<meta name="theme-color" content="#0a5bd8">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/logo.svg">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Snapr: free window snapping for your Mac menu bar">
+<meta property="og:description" content="Snap windows to halves, quarters, thirds and more. Free, open source, local-only, no telemetry.">
+<meta property="og:site_name" content="Snapr">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Snapr: free window snapping for your Mac menu bar">
+<meta name="twitter:description" content="Snap windows to halves, quarters, thirds and more. Free, open source, local-only, no telemetry.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="assets/logo.svg" alt="" width="28" height="28">Snapr</a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#install">Install</a></li>
+        <li class="hide-s"><a href="#privacy">Privacy</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="wrap hero" id="top">
+    <div>
+      <h1>Windows that snap into place.</h1>
+      <p class="lead">Snapr is a free menu bar app for macOS that tiles your windows with a shortcut or a drag to the screen edge. Windows-style snap, for your Mac.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/Nirmal1212/mac-snapr/releases">Download</a>
+        <a class="btn ghost" href="https://github.com/Nirmal1212/mac-snapr">View on GitHub</a>
+      </div>
+      <p class="note">Free and open source (MIT). Requires macOS 13 or later. Current builds are ad-hoc signed, not notarized; see <a href="#install">install</a>.</p>
+    </div>
+    <div class="mock" role="img" aria-label="Illustration: three windows rearranging from a half and two quarters into three equal thirds.">
+      <div class="win w1"></div><div class="win w2"></div><div class="win w3"></div>
+    </div>
+  </div>
+
+  <section class="alt" id="features" aria-labelledby="h-features">
+    <div class="wrap">
+      <h2 id="h-features">What Snapr does</h2>
+      <p class="sub">Every feature below is implemented in the app today. Defaults are listed in the README; all shortcuts can be rebound in Settings.</p>
+      <div class="grid">
+        <div class="card"><h3>Snap layouts</h3>
+          <p>Halves, quarters, thirds and two-thirds, plus fourths, sixths, eighths and ninths, center half, almost-maximize, maximize, center and restore. Repeating a half cycles 1/2, 2/3 and 1/3 width.</p></div>
+        <div class="card"><h3>Keyboard shortcuts</h3>
+          <p>Global shortcuts such as <kbd>Ctrl</kbd>+<kbd>Opt</kbd>+<kbd>←</kbd> for the left half. Rebind or clear any of them; conflicts are flagged. A Spectacle-compatible preset is included.</p></div>
+        <div class="card"><h3>Drag to the edge</h3>
+          <p>Drag a window to a side for a half, the top for maximize, or a corner for a quarter, with a preview of where it will land. Can be switched off.</p></div>
+        <div class="card"><h3>Multiple displays</h3>
+          <p>Send windows to the next or previous display, with options for display ordering and how sizes carry over.</p></div>
+        <div class="card"><h3>Gaps and sizing</h3>
+          <p>Optional gaps between windows and at screen edges, larger/smaller steps, move without resizing, and a hint when a window hits its minimum size.</p></div>
+        <div class="card"><h3>Multi-window modes</h3>
+          <p>Tile all windows or just the active app (rows, columns), cascade, and cycle through a stack of windows. Todo mode reserves a sidebar and tiles the rest beside it.</p></div>
+        <div class="card"><h3>Custom layouts</h3>
+          <p>Define your own zones with shortcuts for any size and position, and save and recall window arrangements.</p></div>
+        <div class="card"><h3>Automation</h3>
+          <p>Run actions from scripts or Shortcuts with <code>snapr://execute-action?name=left-half</code>, and ignore or unignore apps by bundle ID. Advanced options via <code>defaults write</code>.</p></div>
+        <div class="card"><h3>Ignore apps and config</h3>
+          <p>Turn shortcuts off while chosen apps are frontmost. Export and import your settings as JSON to move between Macs.</p></div>
+        <div class="card"><h3>Move between Spaces <span class="tag">Experimental</span></h3>
+          <p>Off by default. It relies on private macOS APIs, may not work on every macOS version, and is never switched on by an imported config.</p></div>
+      </div>
+      <img class="layouts" src="assets/layouts.svg" alt="Diagrams of a window snapped to a half, quarter, third, two thirds, sixth and ninth of the screen, plus a center third and a tiled grid." width="640" height="230" loading="lazy">
+    </div>
+  </section>
+
+  <section id="install" aria-labelledby="h-install">
+    <div class="wrap">
+      <h2 id="h-install">Install in three steps</h2>
+      <p class="sub">Snapr is currently distributed as an ad-hoc signed DMG. It is not notarized and not on the App Store, so macOS asks for a little extra confirmation the first time.</p>
+      <ol class="steps">
+        <li><h3>Download the DMG</h3><p>Get <code>Snapr-&lt;version&gt;.dmg</code> from the <a href="https://github.com/Nirmal1212/mac-snapr/releases">Releases page</a> and drag Snapr to Applications.</p></li>
+        <li><h3>Right-click, then Open</h3><p>The first time, right-click Snapr.app and choose Open to get past Gatekeeper. Alternatively run <code>xattr -dr com.apple.quarantine /Applications/Snapr.app</code>.</p></li>
+        <li><h3>Grant Accessibility</h3><p>When prompted, allow Snapr in System Settings, Privacy &amp; Security, Accessibility. Then use the menu bar icon, a shortcut or a drag.</p></li>
+      </ol>
+      <p class="note">Prefer Homebrew? A cask template exists in the repo, but a tap has not been published yet. Check the Releases page for status.</p>
+    </div>
+  </section>
+
+  <section class="alt" id="privacy" aria-labelledby="h-privacy">
+    <div class="wrap">
+      <h2 id="h-privacy">Private by design</h2>
+      <p class="sub">Snapr is free, runs entirely on your Mac, and has no telemetry and no accounts. The only network use is an optional update check, which you can turn off in Settings. Development builds do not check at all. The source is public so you can verify this yourself.</p>
+    </div>
+  </section>
+
+  <section id="faq" aria-labelledby="h-faq">
+    <div class="wrap">
+      <h2 id="h-faq">FAQ</h2>
+      <details><summary>Why does Snapr need Accessibility permission?</summary>
+        <p>macOS only lets an app move and resize other apps' windows through the Accessibility API. Snapr uses it for that and for detecting drags to screen edges. It does not read the content of your windows.</p></details>
+      <details><summary>Why does macOS warn me when I open it?</summary>
+        <p>Current builds are ad-hoc signed and not notarized by Apple, so Gatekeeper blocks a normal double-click on first launch. Right-click Snapr.app and choose Open, or remove the quarantine flag as described above.</p></details>
+      <details><summary>Which macOS versions are supported?</summary>
+        <p>macOS 13 (Ventura) or later.</p></details>
+      <details><summary>Is it really free?</summary>
+        <p>Yes. Snapr is open source under the MIT license, with no paid tier, ads or accounts.</p></details>
+      <details><summary>Can I turn off update checks?</summary>
+        <p>Yes. Release builds can check for updates about daily; switch that off in Settings.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Snapr is released under the <a href="https://github.com/Nirmal1212/mac-snapr/blob/develop/LICENSE">MIT License</a>. Not affiliated with Apple.</p>
+    <ul>
+      <li><a href="https://github.com/Nirmal1212/mac-snapr">GitHub</a></li>
+      <li><a href="https://github.com/Nirmal1212/mac-snapr/releases">Releases</a></li>
+      <li><a href="https://github.com/Nirmal1212/mac-snapr/issues">Issues</a></li>
+    </ul>
+  </div>
+</footer>
+</body>
+</html>
