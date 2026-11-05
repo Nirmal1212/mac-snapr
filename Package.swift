@@ -5,6 +5,8 @@ let package = Package(
     name: "Snapr",
     platforms: [.macOS(.v13)],
     targets: [
-        .executableTarget(name: "Snapr", path: "Sources/Snapr")
+        .target(name: "SnaprCore", path: "Sources/SnaprCore"),
+        .executableTarget(name: "Snapr", dependencies: ["SnaprCore"], path: "Sources/Snapr"),
+        .testTarget(name: "SnaprCoreTests", dependencies: ["SnaprCore"], path: "Tests/SnaprCoreTests")
     ]
 )
