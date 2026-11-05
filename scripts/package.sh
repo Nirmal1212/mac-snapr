@@ -7,6 +7,7 @@
 #   SIGN_IDENTITY     Developer ID for a real signature; defaults to ad-hoc ("-")
 #   SU_FEED_URL       https URL of appcast.xml (Sparkle SUFeedURL)
 #   SU_PUBLIC_ED_KEY  Sparkle EdDSA public key (from `generate_keys -p`); never the private key
+# SUEnableAutomaticChecks is deliberately not set: Sparkle asks the user for consent on its own prompt.
 # If SU_FEED_URL or SU_PUBLIC_ED_KEY is unset, the Sparkle keys are omitted and updates are disabled.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -58,7 +59,6 @@ SPARKLE_KEYS=""
 if [[ -n "$SU_FEED_URL" && -n "$SU_PUBLIC_ED_KEY" ]]; then
   SPARKLE_KEYS="  <key>SUFeedURL</key><string>$SU_FEED_URL</string>
   <key>SUPublicEDKey</key><string>$SU_PUBLIC_ED_KEY</string>
-  <key>SUEnableAutomaticChecks</key><true/>
   <key>SUEnableSystemProfiling</key><false/>"
 else
   echo "warning: SU_FEED_URL / SU_PUBLIC_ED_KEY not both set; building with updates disabled" >&2

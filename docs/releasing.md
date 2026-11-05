@@ -60,6 +60,8 @@ The cask declares `auto_updates true` because Sparkle updates the app in place.
 
 ## Notes
 
+- `SUEnableAutomaticChecks` is intentionally not set, so Sparkle asks users for permission with its own prompt before checking automatically.
+- `softprops/action-gh-release` is pinned to the commit behind `v2` (verified with `ls-remote`); re-verify when bumping.
 - Updates are the only network use. Users can turn automatic checks off in Settings.
 - Never commit private keys, exported key files or notarization credentials.
 - The CI release job reads the public repository variables `SU_FEED_URL` and `SU_PUBLIC_ED_KEY` and builds with the

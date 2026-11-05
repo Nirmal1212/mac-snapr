@@ -19,7 +19,7 @@ Snapr: a small, fast, native macOS menu bar app giving Windows-style window mana
 ## Domain Notes
 - Requires Accessibility permission; app must degrade gracefully without it.
 - Use `NSScreen.visibleFrame` (excludes menu bar/Dock); convert between Cocoa (bottom-left) and AX (top-left) coordinates.
-- No network access, no telemetry. Fully local.
+- No telemetry. Network access only for optional, user-disableable update checks (Sparkle); otherwise fully local.
 
 ## Constraints
 - Idle CPU < 1%, memory < 50 MB.

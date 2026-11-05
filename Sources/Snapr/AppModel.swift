@@ -66,7 +66,7 @@ final class AppModel: ObservableObject, AutomationHost {
         settings.changes
             .filter { $0 == SettingKey<Bool>.automaticUpdateChecks.name }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.applyUpdateSettings() }
+            .sink { [weak self] _ in self?.applyUpdateSettings(userChanged: true) }
             .store(in: &cancellables)
 
         refreshTrust()
@@ -178,8 +178,11 @@ final class AppModel: ObservableObject, AutomationHost {
         failedShortcuts = hotkeys.register(settings.get(.shortcuts))
     }
 
-    func applyUpdateSettings() {
-        updater.automaticallyChecks = settings.get(.automaticUpdateChecks)
+    /// Pushes the setting to Sparkle. At launch only an explicit "off" is applied: setting `true` in code
+    /// would skip Sparkle's own consent prompt.
+    func applyUpdateSettings(userChanged: Bool = false) {
+        let enabled = settings.get(.automaticUpdateChecks)
+        if userChanged || !enabled { updater.automaticallyChecks = enabled }
     }
 
     func refreshTrust() {
