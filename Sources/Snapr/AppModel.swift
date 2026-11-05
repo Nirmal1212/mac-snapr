@@ -18,6 +18,10 @@ final class AppModel: ObservableObject, AutomationHost {
     private(set) lazy var dragMonitor = DragSnapMonitor(
         windows: windows, screens: screens, controller: controller, settings: settings, overlay: overlay)
 
+    private(set) lazy var input = InputCoordinator(
+        settings: settings, windows: windows, screens: screens, controller: controller, overlay: overlay,
+        isWindowDrag: { [weak self] in self?.dragMonitor.isWindowDrag ?? false })
+
     @Published private(set) var trusted = AXIsProcessTrusted()
     @Published private(set) var dragRunning = false
     @Published var failedShortcuts: [SnapAction] = []
@@ -171,9 +175,11 @@ final class AppModel: ObservableObject, AutomationHost {
         if now != trusted { trusted = now }
         if now {
             if !dragMonitor.isRunning { dragMonitor.start() }
+            input.start()
             onboarding.close()
         } else if dragMonitor.isRunning {
             dragMonitor.stop()
+            input.stop()
         }
         let running = dragMonitor.isRunning
         if running != dragRunning { dragRunning = running }

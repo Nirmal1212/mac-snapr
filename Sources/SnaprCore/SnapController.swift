@@ -12,6 +12,10 @@ public final class SnapController {
     private let screens: ScreenProvider
     public let restoreStore: RestoreStore
     private var lastSnap: [WindowID: LastSnap] = [:]
+    /// Rules for moving windows between displays.
+    public var displayRules = DisplayRules()
+    /// Moves the cursor when `displayRules.moveCursorWithWindow` is on.
+    public var cursor: CursorProvider?
 
     public init(windows: WindowProvider, screens: ScreenProvider, restoreStore: RestoreStore = RestoreStore()) {
         self.windows = windows
@@ -47,12 +51,10 @@ public final class SnapController {
             return true
 
         case .nextDisplay, .previousDisplay:
-            guard let destination = ScreenGeometry.neighbor(of: current, in: all, forward: action == .nextDisplay)
+            guard let destination = ScreenGeometry.neighbor(
+                of: current, in: all, forward: action == .nextDisplay, byX: displayRules.orderByX)
             else { return false }
-            let bounds = destination.visibleFrame
-            let moved = WindowGeometry.relativeFrame(window.frame, from: current.visibleFrame, to: bounds)
-            lastSnap[window.id] = nil
-            return apply(WindowGeometry.clamped(moved, to: bounds), to: window, bounds: bounds) != nil
+            return move(window, from: current, to: destination)
 
         default:
             let previous = lastSnap[window.id]
@@ -88,5 +90,47 @@ public final class SnapController {
             return windows.setFrame(fixed, for: window.id) ?? result
         }
         return result
+    }
+}
+
+// MARK: - Advanced input support
+
+extension SnapController {
+    /// Places `window` at an arbitrary `frame` on `screen` (drag zones without a keyboard action).
+    @discardableResult
+    public func snap(_ window: WindowInfo, toFrame target: CGRect, screen: ScreenInfo, restoreFrame: CGRect? = nil) -> Bool {
+        guard window.canMove else { return false }
+        let stillSnapped = lastSnap[window.id].map { WindowGeometry.approximatelyEqual(window.frame, $0.frame) } ?? false
+        restoreStore.record(restoreFrame ?? window.frame, for: window.id, overwrite: !stillSnapped)
+        lastSnap[window.id] = nil
+        return apply(target, to: window, bounds: screen.visibleFrame) != nil
+    }
+
+    /// Moves a window to another display, honoring `displayRules`.
+    fileprivate func move(_ window: WindowInfo, from current: ScreenInfo, to destination: ScreenInfo) -> Bool {
+        let bounds = destination.visibleFrame
+        let previous = lastSnap[window.id]
+        let stillSnapped = previous.map { WindowGeometry.approximatelyEqual(window.frame, $0.frame) } ?? false
+        var repeated: LastSnap?
+        let target: CGRect
+        if displayRules.keepSizeWhenMaximized,
+            WindowGeometry.approximatelyEqual(window.frame, current.visibleFrame, tolerance: 4) {
+            target = WindowGeometry.centered(size: window.frame.size, in: bounds)
+        } else if displayRules.repeatLastAction, stillSnapped, let previous,
+            let frame = WindowGeometry.frame(for: previous.action, in: bounds, current: window.frame, step: previous.step) {
+            target = frame
+            repeated = previous
+        } else {
+            let moved = WindowGeometry.relativeFrame(window.frame, from: current.visibleFrame, to: bounds)
+            target = WindowGeometry.clamped(moved, to: bounds)
+        }
+        lastSnap[window.id] = nil
+        guard let result = apply(target, to: window, bounds: bounds) else { return false }
+        if var repeated {
+            repeated.frame = result
+            lastSnap[window.id] = repeated
+        }
+        if displayRules.moveCursorWithWindow { cursor?.move(to: CGPoint(x: result.midX, y: result.midY)) }
+        return true
     }
 }
