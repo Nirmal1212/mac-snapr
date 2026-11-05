@@ -11,11 +11,11 @@
 - [ ] 2.4 Window sizing and light/dark appearance check
 
 ## 3. Menu intro
-- [ ] 3.1 Add `showIntroOnOpen` settings key (default true, tolerant decoding)
-- [ ] 3.2 Switch `MenuBarExtra` to `.window` style; build Intro page and Actions page
-- [ ] 3.3 Actions page: grouped, scrolling list with shortcut labels; run on previously focused window
-- [ ] 3.4 "Show intro when opening the menu" toggle in Settings > General (default on)
-- [ ] 3.5 Tests for intro state transitions and target-window tracking with mock providers
+- [x] 3.1 Add `showIntroOnOpen` settings key (default true, tolerant decoding)
+- [x] 3.2 Switch `MenuBarExtra` to `.window` style; build Intro page and Actions page
+- [x] 3.3 Actions page: grouped, scrolling list with shortcut labels; run on previously focused window
+- [x] 3.4 "Show intro when opening the menu" toggle in Settings > General (default on)
+- [x] 3.5 Tests for intro state transitions and target-window tracking with mock providers
 
 ## 4. Docs
 - [ ] 4.1 README screenshots of new settings and intro (needs a Mac)

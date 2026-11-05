@@ -27,7 +27,9 @@ final class AXWindowProvider: WindowProvider {
     /// Per-app quirks (native resize list, Enhanced UI handling); set by `AppModel`.
     var compatibility: WindowCompatibility?
     var debugLog: DebugLog?
-    private(set) var lastExternalPID: pid_t?  // read by AXWindowProvider+List (add-multi-window-modes)
+    private var tracker = ExternalAppTracker(ownPID: ProcessInfo.processInfo.processIdentifier)
+    /// Last app other than Snapr that was frontmost; read by AXWindowProvider+List (add-multi-window-modes).
+    var lastExternalPID: pid_t? { tracker.lastExternalPID }
     private var token: NSObjectProtocol?
     /// Longest an unresponsive app may block an Accessibility call on the main run loop.
     static let messagingTimeout: Float = 0.25
@@ -36,24 +38,19 @@ final class AXWindowProvider: WindowProvider {
 
     init() {
         AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), Self.messagingTimeout)
-        if let app = NSWorkspace.shared.frontmostApplication, !Self.isSelf(app) {
-            lastExternalPID = app.processIdentifier
-        }
+        tracker = ExternalAppTracker(
+            ownPID: ProcessInfo.processInfo.processIdentifier,
+            initialFrontmost: NSWorkspace.shared.frontmostApplication?.processIdentifier)
         token = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
         ) { [weak self] note in
-            guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
-                !Self.isSelf(app)
+            guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
             else { return }
-            self?.lastExternalPID = app.processIdentifier
+            self?.tracker.activated(pid: app.processIdentifier)
         }
     }
 
     deinit { token.map(NSWorkspace.shared.notificationCenter.removeObserver) }
-
-    private static func isSelf(_ app: NSRunningApplication) -> Bool {
-        app.processIdentifier == ProcessInfo.processInfo.processIdentifier
-    }
 
     func focusedWindow() -> WindowInfo? {
         guard AXIsProcessTrusted(), let pid = lastExternalPID else { return nil }
