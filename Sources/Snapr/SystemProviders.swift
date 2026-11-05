@@ -25,8 +25,13 @@ final class AXWindowProvider: WindowProvider {
     private var elements: [WindowID: AXUIElement] = [:]
     private var lastExternalPID: pid_t?
     private var token: NSObjectProtocol?
+    /// Longest an unresponsive app may block an Accessibility call on the main run loop.
+    static let messagingTimeout: Float = 0.25
+    /// Total time of the eased placement animation; 0 places windows instantly.
+    var animationDuration: TimeInterval = 0
 
     init() {
+        AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), Self.messagingTimeout)
         if let app = NSWorkspace.shared.frontmostApplication, !Self.isSelf(app) {
             lastExternalPID = app.processIdentifier
         }
@@ -49,6 +54,7 @@ final class AXWindowProvider: WindowProvider {
     func focusedWindow() -> WindowInfo? {
         guard AXIsProcessTrusted(), let pid = lastExternalPID else { return nil }
         let app = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(app, Self.messagingTimeout)
         guard let element = Self.element(app, kAXFocusedWindowAttribute) ?? Self.element(app, kAXMainWindowAttribute)
         else { return nil }
         return info(for: element)
@@ -60,6 +66,7 @@ final class AXWindowProvider: WindowProvider {
         let status = AXUIElementCopyElementAtPosition(
             AXUIElementCreateSystemWide(), Float(point.x), Float(point.y), &hit)
         guard status == .success, let hit else { return nil }
+        AXUIElementSetMessagingTimeout(hit, Self.messagingTimeout)
         var pid: pid_t = 0
         if AXUIElementGetPid(hit, &pid) == .success, pid == ProcessInfo.processInfo.processIdentifier { return nil }
         let role = Self.string(hit, kAXRoleAttribute)
@@ -74,6 +81,15 @@ final class AXWindowProvider: WindowProvider {
     @discardableResult
     func setFrame(_ frame: CGRect, for id: WindowID) -> CGRect? {
         guard let element = elements[id] else { return nil }
+        if animationDuration > 0, let start = Self.frame(of: element) {
+            // Bounded, eased steps; the final settle below still guarantees the exact frame.
+            let steps = 6
+            for step in FrameAnimation.frames(from: start, to: frame, steps: steps).dropLast() {
+                Self.set(element, kAXPositionAttribute, point: step.origin)
+                Self.set(element, kAXSizeAttribute, size: step.size)
+                usleep(UInt32(animationDuration / Double(steps) * 1_000_000))
+            }
+        }
         // Size, position, size: the first resize may be clamped by the old display, the last settles it.
         Self.set(element, kAXSizeAttribute, size: frame.size)
         Self.set(element, kAXPositionAttribute, point: frame.origin)
@@ -89,6 +105,7 @@ final class AXWindowProvider: WindowProvider {
         if Self.bool(element, "AXFullScreen") == true { return nil }
         let id = WindowID(Int(truncatingIfNeeded: CFHash(element)))
         elements[id] = element
+        AXUIElementSetMessagingTimeout(element, Self.messagingTimeout)
         return WindowInfo(
             id: id, frame: frame,
             canMove: Self.isSettable(element, kAXPositionAttribute),

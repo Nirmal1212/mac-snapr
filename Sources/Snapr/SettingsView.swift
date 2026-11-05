@@ -37,6 +37,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            InputSettingsSections(model: model)
             Section("Shortcuts") {
                 ForEach(ActionRegistry.grouped(), id: \.category) { group in
                     Text(group.category.rawValue).font(.headline).padding(.top, 6)
