@@ -8,7 +8,8 @@ struct CustomLayoutSections: View {
 
     var body: some View {
         Section("Custom Zones") {
-            Text("Zones are fractions of the usable screen area (after gaps). Run them from the menu, a shortcut, or snapr://execute-action?name=custom:<id>.")
+            Text("Zones are fractions of the usable screen area (after gaps). "
+                + "Run them from the menu, a shortcut, or snapr://execute-action?name=custom:<id>.")
                 .font(.caption).foregroundColor(.secondary)
                 .settingTarget("custom.zones")
             ForEach(model.customZones) { zone in zoneRow(zone) }
@@ -18,7 +19,8 @@ struct CustomLayoutSections: View {
             }
         }
         Section("Saved Layouts") {
-            Text("Save where your windows are now and bring them back later. Windows are matched by app and title; closed apps are not launched.")
+            Text("Save where your windows are now and bring them back later. "
+                + "Windows are matched by app and title; closed apps are not launched.")
                 .font(.caption).foregroundColor(.secondary)
                 .settingTarget("custom.saved-layouts")
             ForEach(model.savedLayouts) { layout in layoutRow(layout) }
@@ -36,7 +38,9 @@ struct CustomLayoutSections: View {
                 isOn: Binding(get: { model.spacesEnabled }, set: { model.setSpacesEnabled($0) })
             )
             .settingTarget("custom.spaces")
-            Text("Uses undocumented macOS functions. It may stop working in any macOS update and does nothing when unsupported. Use snapr://execute-action?name=space:next, space:previous or space:1 … space:16, or the menu.")
+            Text("Uses undocumented macOS functions. It may stop working in any macOS update "
+                + "and does nothing when unsupported. "
+                + "Use snapr://execute-action?name=space:next, space:previous or space:1 … space:16, or the menu.")
                 .font(.caption).foregroundColor(.secondary)
             if model.spacesEnabled && !model.spaceMoverAvailable {
                 Text("Not supported on this macOS version.").font(.caption).foregroundColor(.red)

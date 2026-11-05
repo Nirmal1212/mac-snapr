@@ -48,7 +48,10 @@ final class MultiWindowPlannerTests: XCTestCase {
         let frames = MultiWindowPlanner.grid(count: 6, columns: 3, in: area, balanced: true, gap: 10)
         for (i, a) in frames.enumerated() {
             XCTAssertTrue(area.contains(a))
-            for b in frames[(i + 1)...] { XCTAssertTrue(a.intersection(b).isNull || a.intersection(b).isEmpty) }
+            for b in frames[(i + 1)...] {
+                let overlap = a.intersection(b)
+                XCTAssertTrue(overlap.isNull || overlap.isEmpty)
+            }
         }
         XCTAssertEqual(frames[1].minX - frames[0].maxX, 10, accuracy: 1)
         XCTAssertEqual(frames[3].minY - frames[0].maxY, 10, accuracy: 1)

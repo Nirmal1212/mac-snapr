@@ -31,13 +31,16 @@ final class MultiWindowCoordinator {
             saveOptions: { settings.set($0, for: .multiWindowOptions) },
             stageManagerActive: Self.isStageManagerActive)
         self.controller = controller
-        monitor = NewWindowMonitor(list: windows, options: { settings.get(.multiWindowOptions) }) { action, window in
-            if action.isMultiWindow {
-                controller.perform(action)
-            } else {
-                snap.perform(action, on: window.info)
-            }
-        }
+        monitor = NewWindowMonitor(
+            list: windows,
+            options: { settings.get(.multiWindowOptions) },
+            apply: { action, window in
+                if action.isMultiWindow {
+                    controller.perform(action)
+                } else {
+                    snap.perform(action, on: window.info)
+                }
+            })
         controller.onStackChanged = { [badge] index, count, frame in badge.show(index: index, count: count, over: frame) }
     }
 

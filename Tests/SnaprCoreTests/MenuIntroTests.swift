@@ -109,7 +109,8 @@ final class ConfigIntroTests: XCTestCase {
     func testIntroSeenIsNotExportedAndOldKeyIgnored() throws {
         let source = SettingsStore(storage: MemorySettingsStorage())
         source.set(true, for: .introSeen)
-        let text = String(decoding: try ConfigDocument.export(from: source).encoded(), as: UTF8.self)
+        let data = try ConfigDocument.export(from: source).encoded()
+        let text = String(bytes: data, encoding: .utf8) ?? ""
         XCTAssertFalse(text.contains("introSeen"))
         XCTAssertFalse(text.contains("showIntroOnOpen"))
 

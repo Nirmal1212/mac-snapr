@@ -50,7 +50,9 @@ struct MultiWindowSettingsSections: View {
                 .settingTarget("multi.stage-manager")
             Text("Applies only while Stage Manager is turned on in System Settings.")
                 .font(.caption).foregroundColor(.secondary)
-            Stepper("Strip width: \(Int(options.stageManager.stripWidth)) pt", value: binding(\.stageManager.stripWidth), in: 50...400, step: 10)
+            Stepper(
+                "Strip width: \(Int(options.stageManager.stripWidth)) pt",
+                value: binding(\.stageManager.stripWidth), in: 50...400, step: 10)
                 .settingTarget("multi.stage-width")
             Picker("Strip side", selection: binding(\.stageManager.side)) {
                 ForEach(ScreenSide.allCases, id: \.self) { Text($0.title).tag($0) }

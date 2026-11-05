@@ -25,7 +25,11 @@ final class RecorderView: NSView {
     private var recording = false {
         didSet {
             needsDisplay = true
-            recording ? AppModel.shared.hotkeys.suspend() : AppModel.shared.hotkeys.resume()
+            if recording {
+                AppModel.shared.hotkeys.suspend()
+            } else {
+                AppModel.shared.hotkeys.resume()
+            }
         }
     }
 
