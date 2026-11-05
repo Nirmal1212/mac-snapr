@@ -52,11 +52,12 @@ public enum DragZones {
 
     /// Zone for a point across all screens, together with its target frame (nil when drag snap is off).
     public static func target(
-        at point: CGPoint, screens: [ScreenInfo], enabled: Bool
+        at point: CGPoint, screens: [ScreenInfo], enabled: Bool, options: LayoutOptions = LayoutOptions()
     ) -> (zone: DragZone, screen: ScreenInfo, frame: CGRect)? {
         guard enabled, let screen = screens.first(where: { $0.frame.contains(point) }),
             let zone = zone(at: point, in: screen.frame),
-            let frame = WindowGeometry.frame(for: zone.action, in: screen.visibleFrame)
+            let frame = LayoutEngine.target(
+                for: zone.action, on: screen, isPrimary: LayoutEngine.isPrimary(screen, in: screens), options: options)
         else { return nil }
         return (zone, screen, frame)
     }

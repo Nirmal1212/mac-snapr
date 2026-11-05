@@ -10,7 +10,9 @@ final class WindowGeometryTests: XCTestCase {
 
     func testRightHalfAnchorsToRightEdge() {
         XCTAssertEqual(WindowGeometry.frame(for: .rightHalf, in: visible), CGRect(x: 600, y: 25, width: 600, height: 775))
-        let third = WindowGeometry.frame(for: .rightHalf, in: visible, step: 1)!
+        var spec = LayoutOptions()
+        spec.halfCycleOrder = .spec
+        let third = WindowGeometry.frame(for: .rightHalf, in: visible, step: 1, options: spec)!
         XCTAssertEqual(third.maxX, visible.maxX, accuracy: 0.001)
         XCTAssertEqual(third.width, 400, accuracy: 0.001)
     }

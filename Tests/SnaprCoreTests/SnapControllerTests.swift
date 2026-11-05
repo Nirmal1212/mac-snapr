@@ -29,9 +29,9 @@ final class SnapControllerTests: XCTestCase {
         let (controller, windows) = make()
         controller.perform(.leftHalf)
         controller.perform(.leftHalf)
-        XCTAssertEqual(windows.windows[winID]!.frame.width, 1000.0 / 3, accuracy: 0.01)
-        controller.perform(.leftHalf)
         XCTAssertEqual(windows.windows[winID]!.frame.width, 2000.0 / 3, accuracy: 0.01)
+        controller.perform(.leftHalf)
+        XCTAssertEqual(windows.windows[winID]!.frame.width, 1000.0 / 3, accuracy: 0.01)
         controller.perform(.leftHalf)
         XCTAssertEqual(windows.windows[winID]!.frame.width, 500, accuracy: 0.01)
     }
