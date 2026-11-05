@@ -13,6 +13,7 @@ struct SettingsView: View {
         Form {
             Section("General") {
                 Toggle("Snap windows by dragging to screen edges", isOn: binding(.dragSnapEnabled))
+                Toggle("Show intro when opening the menu", isOn: binding(.showIntroOnOpen))
                 Toggle("Launch at login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { enabled in
                         do {
