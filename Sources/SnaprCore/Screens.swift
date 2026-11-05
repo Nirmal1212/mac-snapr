@@ -31,8 +31,11 @@ public enum ScreenGeometry {
     }
 
     /// Next/previous screen (wrapping). Returns nil with fewer than two screens.
-    public static func neighbor(of screen: ScreenInfo, in screens: [ScreenInfo], forward: Bool) -> ScreenInfo? {
-        let list = ordered(screens)
+    /// - Parameter byX: order by x coordinate (otherwise keep the system's order).
+    public static func neighbor(
+        of screen: ScreenInfo, in screens: [ScreenInfo], forward: Bool, byX: Bool = true
+    ) -> ScreenInfo? {
+        let list = byX ? ordered(screens) : screens
         guard list.count > 1, let index = list.firstIndex(where: { $0.id == screen.id }) else { return nil }
         let next = (index + (forward ? 1 : list.count - 1)) % list.count
         return list[next]
