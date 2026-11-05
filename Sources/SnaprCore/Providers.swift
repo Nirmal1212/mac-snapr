@@ -25,6 +25,8 @@ public protocol WindowProvider: AnyObject {
     func focusedWindow() -> WindowInfo?
     /// The window under a global point (used by drag snapping).
     func window(at point: CGPoint) -> WindowInfo?
+    /// The current frame of a previously returned window (used to detect window drags).
+    func currentFrame(of id: WindowID) -> CGRect?
     /// Applies a frame; returns the frame the window actually ended up with, or nil on failure.
     @discardableResult
     func setFrame(_ frame: CGRect, for id: WindowID) -> CGRect?
@@ -53,6 +55,8 @@ public final class MockWindowProvider: WindowProvider {
     public func window(at point: CGPoint) -> WindowInfo? {
         windows.values.first { $0.frame.contains(point) }
     }
+
+    public func currentFrame(of id: WindowID) -> CGRect? { windows[id]?.frame }
 
     @discardableResult
     public func setFrame(_ frame: CGRect, for id: WindowID) -> CGRect? {
