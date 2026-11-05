@@ -25,7 +25,7 @@ public struct HiddenPreferences {
 
     /// Extra native-resize apps given via `defaults write`; merged with the in-app list.
     public var nativeResizeApps: [String] {
-        (defaults.array(forKey: Key.nativeResizeApps) as? [Any])?.compactMap { $0 as? String } ?? []
+        defaults.array(forKey: Key.nativeResizeApps)?.compactMap { $0 as? String } ?? []
     }
 }
 

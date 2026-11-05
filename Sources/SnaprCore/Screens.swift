@@ -1,6 +1,6 @@
 import CoreGraphics
 
-public struct ScreenInfo: Equatable, Hashable {
+public struct ScreenInfo: Equatable {
     public var id: Int
     /// Full frame in the global top-left/y-down space.
     public var frame: CGRect
