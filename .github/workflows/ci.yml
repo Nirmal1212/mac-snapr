@@ -13,6 +13,11 @@ jobs:
       - run: swift test --parallel
       - name: Package
         if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          # Public values (repository variables, not secrets). Unset -> package.sh builds with updates disabled.
+          SU_FEED_URL: ${{ vars.SU_FEED_URL }}
+          SU_PUBLIC_ED_KEY: ${{ vars.SU_PUBLIC_ED_KEY }}
+          BUILD_NUMBER: ${{ github.run_number }}
         run: VERSION="${GITHUB_REF_NAME#v}" scripts/package.sh
       - name: Release
         if: startsWith(github.ref, 'refs/tags/v')
