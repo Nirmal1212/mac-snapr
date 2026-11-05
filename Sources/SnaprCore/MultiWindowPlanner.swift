@@ -14,7 +14,7 @@ public enum MultiWindowPlanner {
             let cellRatio = (area.width / CGFloat(columns)) / (area.height / CGFloat(rows))
             // Empty cells waste space; penalize them slightly so exact grids win ties.
             let empty = CGFloat(columns * rows - count)
-            let score = abs(log(cellRatio)) + empty * 0.05
+            let score = abs(log(cellRatio)) + empty * 0.5
             if score < bestScore { best = columns; bestScore = score }
         }
         return best

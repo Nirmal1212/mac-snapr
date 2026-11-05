@@ -17,20 +17,25 @@ public struct ConfigDocument: Codable, Equatable {
     public var nativeResizeApps: [String]?
     /// Keyed by action name. Only customizations (differences from default) are exported.
     public var shortcuts: [String: ShortcutEntry]?
+    // MARK: add-multi-window-modes
+    public var multiWindow: MultiWindowOptions?
 
     public init(
         version: Int? = ConfigDocument.currentVersion, dragSnapEnabled: Bool? = nil, ignoredApps: [String]? = nil,
-        nativeResizeApps: [String]? = nil, shortcuts: [String: ShortcutEntry]? = nil
+        nativeResizeApps: [String]? = nil, shortcuts: [String: ShortcutEntry]? = nil,
+        multiWindow: MultiWindowOptions? = nil
     ) {
         self.version = version
         self.dragSnapEnabled = dragSnapEnabled
         self.ignoredApps = ignoredApps
         self.nativeResizeApps = nativeResizeApps
         self.shortcuts = shortcuts
+        self.multiWindow = multiWindow  // add-multi-window-modes
     }
 
     private enum CodingKeys: String, CodingKey {
         case version, dragSnapEnabled, ignoredApps, nativeResizeApps, shortcuts
+        case multiWindow  // add-multi-window-modes
     }
 
     public init(from decoder: Decoder) throws {
@@ -41,6 +46,7 @@ public struct ConfigDocument: Codable, Equatable {
         nativeResizeApps = (try? c.decodeIfPresent([String].self, forKey: .nativeResizeApps)) ?? nil
         let raw = (try? c.decodeIfPresent([String: LenientEntry].self, forKey: .shortcuts)) ?? nil
         shortcuts = raw?.compactMapValues(\.entry)
+        multiWindow = (try? c.decodeIfPresent(MultiWindowOptions.self, forKey: .multiWindow)) ?? nil  // add-multi-window-modes
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -50,6 +56,7 @@ public struct ConfigDocument: Codable, Equatable {
         try c.encodeIfPresent(ignoredApps, forKey: .ignoredApps)
         try c.encodeIfPresent(nativeResizeApps, forKey: .nativeResizeApps)
         try c.encodeIfPresent(shortcuts?.mapValues(LenientEntry.init), forKey: .shortcuts)
+        try c.encodeIfPresent(multiWindow, forKey: .multiWindow)  // add-multi-window-modes
     }
 
     /// Decodes one shortcut value, mapping `null` to clear and malformed values to nil (skipped).
@@ -98,7 +105,8 @@ public struct ConfigDocument: Codable, Equatable {
         }
         return ConfigDocument(
             dragSnapEnabled: settings.get(.dragSnapEnabled), ignoredApps: settings.get(.ignoredApps),
-            nativeResizeApps: settings.get(.nativeResizeApps), shortcuts: shortcuts)
+            nativeResizeApps: settings.get(.nativeResizeApps), shortcuts: shortcuts,
+            multiWindow: settings.get(.multiWindowOptions))
     }
 
     /// Applies present fields; absent ones leave current values untouched. Shortcut entries naming
@@ -108,6 +116,7 @@ public struct ConfigDocument: Codable, Equatable {
         if let dragSnapEnabled { settings.set(dragSnapEnabled, for: .dragSnapEnabled) }
         if let ignoredApps { settings.set(Array(ignoredApps.prefix(SettingsStore.maxIgnoredApps)), for: .ignoredApps) }
         if let nativeResizeApps { settings.set(nativeResizeApps, for: .nativeResizeApps) }
+        if let multiWindow { settings.set(multiWindow, for: .multiWindowOptions) }  // add-multi-window-modes
         var skipped: [String] = []
         if let shortcuts, !shortcuts.isEmpty {
             var map = settings.get(.shortcuts)
