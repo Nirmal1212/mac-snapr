@@ -24,6 +24,79 @@ public enum SnapAction: String, CaseIterable, Codable, Hashable {
     case nextDisplay = "next-display"
     case previousDisplay = "previous-display"
 
+    // MARK: add-layout-engine
+    // Fourths
+    case firstFourth = "first-fourth"
+    case secondFourth = "second-fourth"
+    case thirdFourth = "third-fourth"
+    case lastFourth = "last-fourth"
+    case leftThreeFourths = "left-three-fourths"
+    case rightThreeFourths = "right-three-fourths"
+    // Sixths
+    case topLeftSixth = "top-left-sixth"
+    case topCenterSixth = "top-center-sixth"
+    case topRightSixth = "top-right-sixth"
+    case bottomLeftSixth = "bottom-left-sixth"
+    case bottomCenterSixth = "bottom-center-sixth"
+    case bottomRightSixth = "bottom-right-sixth"
+    // Vertical sixths
+    case verticalSixthLeftTop = "vertical-sixth-left-top"
+    case verticalSixthLeftMiddle = "vertical-sixth-left-middle"
+    case verticalSixthLeftBottom = "vertical-sixth-left-bottom"
+    case verticalSixthRightTop = "vertical-sixth-right-top"
+    case verticalSixthRightMiddle = "vertical-sixth-right-middle"
+    case verticalSixthRightBottom = "vertical-sixth-right-bottom"
+    // Eighths
+    case topFirstEighth = "top-first-eighth"
+    case topSecondEighth = "top-second-eighth"
+    case topThirdEighth = "top-third-eighth"
+    case topFourthEighth = "top-fourth-eighth"
+    case bottomFirstEighth = "bottom-first-eighth"
+    case bottomSecondEighth = "bottom-second-eighth"
+    case bottomThirdEighth = "bottom-third-eighth"
+    case bottomFourthEighth = "bottom-fourth-eighth"
+    // Vertical eighths
+    case verticalEighthLeft1 = "vertical-eighth-left-1"
+    case verticalEighthLeft2 = "vertical-eighth-left-2"
+    case verticalEighthLeft3 = "vertical-eighth-left-3"
+    case verticalEighthLeft4 = "vertical-eighth-left-4"
+    case verticalEighthRight1 = "vertical-eighth-right-1"
+    case verticalEighthRight2 = "vertical-eighth-right-2"
+    case verticalEighthRight3 = "vertical-eighth-right-3"
+    case verticalEighthRight4 = "vertical-eighth-right-4"
+    // Ninths
+    case ninthTopLeft = "ninth-top-left"
+    case ninthTopCenter = "ninth-top-center"
+    case ninthTopRight = "ninth-top-right"
+    case ninthMiddleLeft = "ninth-middle-left"
+    case ninthMiddleCenter = "ninth-middle-center"
+    case ninthMiddleRight = "ninth-middle-right"
+    case ninthBottomLeft = "ninth-bottom-left"
+    case ninthBottomCenter = "ninth-bottom-center"
+    case ninthBottomRight = "ninth-bottom-right"
+    // Corner two-thirds
+    case topLeftTwoThirds = "top-left-two-thirds"
+    case topRightTwoThirds = "top-right-two-thirds"
+    case bottomLeftTwoThirds = "bottom-left-two-thirds"
+    case bottomRightTwoThirds = "bottom-right-two-thirds"
+    // Centered and large
+    case centerHalf = "center-half"
+    case centerProminently = "center-prominently"
+    case almostMaximize = "almost-maximize"
+    case maximizeHeight = "maximize-height"
+    // Sizing and moving
+    case larger = "larger"
+    case smaller = "smaller"
+    case moveLeft = "move-left"
+    case moveRight = "move-right"
+    case moveUp = "move-up"
+    case moveDown = "move-down"
+    case doubleWidth = "double-width"
+    case halveWidth = "halve-width"
+    case doubleHeight = "double-height"
+    case halveHeight = "halve-height"
+    case specifiedSize = "specified-size"
+
     /// Stable machine name (used for persistence and URL schemes).
     public var name: String { rawValue }
 
@@ -47,6 +120,25 @@ public enum SnapAction: String, CaseIterable, Codable, Hashable {
         case .restore: return "Restore"
         case .nextDisplay: return "Next Display"
         case .previousDisplay: return "Previous Display"
+        // MARK: add-layout-engine
+        case .firstFourth, .secondFourth, .thirdFourth, .lastFourth, .leftThreeFourths, .rightThreeFourths:
+            return LayoutCatalog.title(for: self)
+        case .topLeftSixth, .topCenterSixth, .topRightSixth, .bottomLeftSixth, .bottomCenterSixth, .bottomRightSixth:
+            return LayoutCatalog.title(for: self)
+        case .verticalSixthLeftTop, .verticalSixthLeftMiddle, .verticalSixthLeftBottom, .verticalSixthRightTop, .verticalSixthRightMiddle, .verticalSixthRightBottom:
+            return LayoutCatalog.title(for: self)
+        case .topFirstEighth, .topSecondEighth, .topThirdEighth, .topFourthEighth, .bottomFirstEighth, .bottomSecondEighth, .bottomThirdEighth, .bottomFourthEighth:
+            return LayoutCatalog.title(for: self)
+        case .verticalEighthLeft1, .verticalEighthLeft2, .verticalEighthLeft3, .verticalEighthLeft4, .verticalEighthRight1, .verticalEighthRight2, .verticalEighthRight3, .verticalEighthRight4:
+            return LayoutCatalog.title(for: self)
+        case .ninthTopLeft, .ninthTopCenter, .ninthTopRight, .ninthMiddleLeft, .ninthMiddleCenter, .ninthMiddleRight, .ninthBottomLeft, .ninthBottomCenter, .ninthBottomRight:
+            return LayoutCatalog.title(for: self)
+        case .topLeftTwoThirds, .topRightTwoThirds, .bottomLeftTwoThirds, .bottomRightTwoThirds:
+            return LayoutCatalog.title(for: self)
+        case .centerHalf, .centerProminently, .almostMaximize, .maximizeHeight:
+            return LayoutCatalog.title(for: self)
+        case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth, .doubleHeight, .halveHeight, .specifiedSize:
+            return LayoutCatalog.title(for: self)
         }
     }
 
@@ -57,6 +149,25 @@ public enum SnapAction: String, CaseIterable, Codable, Hashable {
         case .leftThird, .centerThird, .rightThird, .leftTwoThirds, .rightTwoThirds: return .thirds
         case .maximize, .center, .restore: return .size
         case .nextDisplay, .previousDisplay: return .displays
+        // MARK: add-layout-engine
+        case .firstFourth, .secondFourth, .thirdFourth, .lastFourth, .leftThreeFourths, .rightThreeFourths:
+            return LayoutCatalog.category(for: self)
+        case .topLeftSixth, .topCenterSixth, .topRightSixth, .bottomLeftSixth, .bottomCenterSixth, .bottomRightSixth:
+            return LayoutCatalog.category(for: self)
+        case .verticalSixthLeftTop, .verticalSixthLeftMiddle, .verticalSixthLeftBottom, .verticalSixthRightTop, .verticalSixthRightMiddle, .verticalSixthRightBottom:
+            return LayoutCatalog.category(for: self)
+        case .topFirstEighth, .topSecondEighth, .topThirdEighth, .topFourthEighth, .bottomFirstEighth, .bottomSecondEighth, .bottomThirdEighth, .bottomFourthEighth:
+            return LayoutCatalog.category(for: self)
+        case .verticalEighthLeft1, .verticalEighthLeft2, .verticalEighthLeft3, .verticalEighthLeft4, .verticalEighthRight1, .verticalEighthRight2, .verticalEighthRight3, .verticalEighthRight4:
+            return LayoutCatalog.category(for: self)
+        case .ninthTopLeft, .ninthTopCenter, .ninthTopRight, .ninthMiddleLeft, .ninthMiddleCenter, .ninthMiddleRight, .ninthBottomLeft, .ninthBottomCenter, .ninthBottomRight:
+            return LayoutCatalog.category(for: self)
+        case .topLeftTwoThirds, .topRightTwoThirds, .bottomLeftTwoThirds, .bottomRightTwoThirds:
+            return LayoutCatalog.category(for: self)
+        case .centerHalf, .centerProminently, .almostMaximize, .maximizeHeight:
+            return LayoutCatalog.category(for: self)
+        case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth, .doubleHeight, .halveHeight, .specifiedSize:
+            return LayoutCatalog.category(for: self)
         }
     }
 }
@@ -65,7 +176,12 @@ public enum ActionCategory: String, CaseIterable {
     case halves = "Halves"
     case quarters = "Quarters"
     case thirds = "Thirds"
+    case fourths = "Fourths"
+    case sixths = "Sixths"
+    case eighths = "Eighths"
+    case ninths = "Ninths"
     case size = "Size"
+    case sizing = "Sizing & Moving"
     case displays = "Displays"
 }
 

@@ -39,6 +39,8 @@ public struct KeyCombo: Codable, Hashable {
         public static let returnKey: UInt32 = 36
         public static let delete: UInt32 = 51
         public static let escape: UInt32 = 53
+        public static let minus: UInt32 = 27
+        public static let equal: UInt32 = 24
         public static let c: UInt32 = 8
         public static let d: UInt32 = 2
         public static let e: UInt32 = 14
@@ -101,6 +103,25 @@ public enum DefaultShortcuts {
         case .previousDisplay:
             key = KeyCombo.Key.left
             modifiers.insert(.command)
+        // MARK: add-layout-engine
+        case .firstFourth, .secondFourth, .thirdFourth, .lastFourth, .leftThreeFourths, .rightThreeFourths:
+            return LayoutCatalog.defaultCombo(for: action)
+        case .topLeftSixth, .topCenterSixth, .topRightSixth, .bottomLeftSixth, .bottomCenterSixth, .bottomRightSixth:
+            return LayoutCatalog.defaultCombo(for: action)
+        case .verticalSixthLeftTop, .verticalSixthLeftMiddle, .verticalSixthLeftBottom, .verticalSixthRightTop, .verticalSixthRightMiddle, .verticalSixthRightBottom:
+            return LayoutCatalog.defaultCombo(for: action)
+        case .topFirstEighth, .topSecondEighth, .topThirdEighth, .topFourthEighth, .bottomFirstEighth, .bottomSecondEighth, .bottomThirdEighth, .bottomFourthEighth:
+            return LayoutCatalog.defaultCombo(for: action)
+        case .verticalEighthLeft1, .verticalEighthLeft2, .verticalEighthLeft3, .verticalEighthLeft4, .verticalEighthRight1, .verticalEighthRight2, .verticalEighthRight3, .verticalEighthRight4:
+            return LayoutCatalog.defaultCombo(for: action)
+        case .ninthTopLeft, .ninthTopCenter, .ninthTopRight, .ninthMiddleLeft, .ninthMiddleCenter, .ninthMiddleRight, .ninthBottomLeft, .ninthBottomCenter, .ninthBottomRight:
+            return LayoutCatalog.defaultCombo(for: action)
+        case .topLeftTwoThirds, .topRightTwoThirds, .bottomLeftTwoThirds, .bottomRightTwoThirds:
+            return LayoutCatalog.defaultCombo(for: action)
+        case .centerHalf, .centerProminently, .almostMaximize, .maximizeHeight:
+            return LayoutCatalog.defaultCombo(for: action)
+        case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth, .doubleHeight, .halveHeight, .specifiedSize:
+            return LayoutCatalog.defaultCombo(for: action)
         }
         return KeyCombo(keyCode: key, modifiers: modifiers)
     }
