@@ -16,3 +16,7 @@ Rules
 - Conventional Commits. CI (build, test, lint) must pass; `openspec validate --all --strict` must pass.
 - Releasing: branch `release/X.Y.Z` from `develop`, then merge into `main` with `--no-ff`, tag `vX.Y.Z` (the tag triggers the release workflow), and merge back into `develop`.
 - After a feature merges, archive its change with `openspec archive <id> --yes` (archive `add-window-management` first).
+
+Settings search
+- Every new settings control must add a search entry (id, title, keywords) to `Sources/SnaprCore/SettingsCatalog.swift` in its section, and mark the control with `.settingTarget("<same id>")` so search can scroll to and highlight it. The unit tests check that sections have entries and ids are unique, but cannot detect a control that has no entry, so reviewers check this.
+- A new settings section is added to the `SettingsSection` enum (title, symbol, `idPrefix`, `searchEntries`) and the detail switch in `SettingsView.swift`.
