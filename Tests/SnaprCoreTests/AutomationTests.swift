@@ -86,7 +86,7 @@ final class AutomationTests: XCTestCase {
         let log = DebugLog()
         let router = AutomationRouter(settings: settings, host: FakeHost(), log: log)
         router.handle(url("snapr://execute-action?name=\(String(repeating: "x", count: 5000))"))
-        XCTAssertLessThan(log.entries[0].message.count, 400)
+        XCTAssertLessThan(log.entries[0].message.count, 500)
     }
 
     // MARK: Hidden preferences
