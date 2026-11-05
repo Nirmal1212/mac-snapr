@@ -97,6 +97,19 @@ public enum SnapAction: String, CaseIterable, Codable, Hashable {
     case halveHeight = "halve-height"
     case specifiedSize = "specified-size"
 
+    // MARK: add-multi-window-modes
+    case tileAll = "tile-all"
+    case tileActiveApp = "tile-active-app"
+    case tileRows = "tile-rows"
+    case tileColumns = "tile-columns"
+    case cascadeAll = "cascade-all"
+    case cascadeActiveApp = "cascade-active-app"
+    case stackNext = "stack-next"
+    case stackPrevious = "stack-previous"
+    case reverseAll = "reverse-all"
+    case toggleTodo = "toggle-todo"
+    case reflowTodo = "reflow-todo"
+
     /// Stable machine name (used for persistence and URL schemes).
     public var name: String { rawValue }
 
@@ -144,6 +157,10 @@ public enum SnapAction: String, CaseIterable, Codable, Hashable {
         case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth,
             .doubleHeight, .halveHeight, .specifiedSize:
             return LayoutCatalog.title(for: self)
+        // MARK: add-multi-window-modes
+        case .tileAll, .tileActiveApp, .tileRows, .tileColumns, .cascadeAll, .cascadeActiveApp, .stackNext,
+            .stackPrevious, .reverseAll, .toggleTodo, .reflowTodo:
+            return MultiWindowCatalog.title(for: self)
         }
     }
 
@@ -178,6 +195,10 @@ public enum SnapAction: String, CaseIterable, Codable, Hashable {
         case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth,
             .doubleHeight, .halveHeight, .specifiedSize:
             return LayoutCatalog.category(for: self)
+        // MARK: add-multi-window-modes
+        case .tileAll, .tileActiveApp, .tileRows, .tileColumns, .cascadeAll, .cascadeActiveApp, .stackNext,
+            .stackPrevious, .reverseAll, .toggleTodo, .reflowTodo:
+            return MultiWindowCatalog.category(for: self)
         }
     }
 }
@@ -193,6 +214,8 @@ public enum ActionCategory: String, CaseIterable {
     case size = "Size"
     case sizing = "Sizing & Moving"
     case displays = "Displays"
+    // MARK: add-multi-window-modes
+    case multiWindow = "Multiple Windows"
 }
 
 /// Lookup over all registered actions.

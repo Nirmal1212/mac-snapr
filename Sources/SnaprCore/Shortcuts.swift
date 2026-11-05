@@ -127,6 +127,10 @@ public enum DefaultShortcuts {
         case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth,
             .doubleHeight, .halveHeight, .specifiedSize:
             return LayoutCatalog.defaultCombo(for: action)
+        // MARK: add-multi-window-modes
+        case .tileAll, .tileActiveApp, .tileRows, .tileColumns, .cascadeAll, .cascadeActiveApp, .stackNext,
+            .stackPrevious, .reverseAll, .toggleTodo, .reflowTodo:
+            return nil  // unbound by default; assign in Settings
         }
         return KeyCombo(keyCode: key, modifiers: modifiers)
     }

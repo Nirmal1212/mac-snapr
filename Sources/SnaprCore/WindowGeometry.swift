@@ -89,6 +89,10 @@ public enum WindowGeometry {
         case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth,
             .doubleHeight, .halveHeight, .specifiedSize:
             return LayoutCatalog.frame(for: action, in: visible, current: current, step: step, options: options)
+        // MARK: add-multi-window-modes
+        case .tileAll, .tileActiveApp, .tileRows, .tileColumns, .cascadeAll, .cascadeActiveApp, .stackNext,
+            .stackPrevious, .reverseAll, .toggleTodo, .reflowTodo:
+            return nil  // multi-window actions are planned by MultiWindowPlanner
         }
     }
 
