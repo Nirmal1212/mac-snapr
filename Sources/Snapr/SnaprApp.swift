@@ -30,9 +30,22 @@ struct SnaprApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = AppModel.shared
 
+    /// Template glyph from Contents/Resources (picks up @2x automatically); nil outside the packaged app.
+    private static let menuBarGlyph: NSImage? = {
+        let image = NSImage(named: "MenuBarIconTemplate")
+        image?.isTemplate = true
+        return image
+    }()
+
     var body: some Scene {
-        MenuBarExtra("Snapr", systemImage: "rectangle.split.2x2") {
+        MenuBarExtra {
             MenuContent(model: model)
+        } label: {
+            if let glyph = Self.menuBarGlyph {
+                Image(nsImage: glyph)
+            } else {
+                Image(systemName: "rectangle.split.2x2")  // e.g. `swift run`: no bundle resources
+            }
         }
     }
 }
