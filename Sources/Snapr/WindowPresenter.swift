@@ -5,11 +5,15 @@ import SwiftUI
 final class WindowPresenter {
     private var window: NSWindow?
 
-    func show<Content: View>(title: String, size: CGSize, @ViewBuilder content: () -> Content) {
+    func show<Content: View>(
+        title: String, size: CGSize, minSize: CGSize? = nil, @ViewBuilder content: () -> Content
+    ) {
         if window == nil {
             let created = NSWindow(
-                contentRect: CGRect(origin: .zero, size: size), styleMask: [.titled, .closable],
+                contentRect: CGRect(origin: .zero, size: size),
+                styleMask: minSize == nil ? [.titled, .closable] : [.titled, .closable, .resizable],
                 backing: .buffered, defer: false)
+            if let minSize { created.contentMinSize = minSize }
             created.title = title
             created.isReleasedWhenClosed = false
             created.contentView = NSHostingView(rootView: content())
