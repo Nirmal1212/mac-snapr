@@ -31,15 +31,24 @@ struct MenuContent: View {
             Divider()
         }
         ForEach(ActionRegistry.grouped(), id: \.category) { group in
-            ForEach(group.actions, id: \.self) { action in
-                Button(label(for: action)) { model.perform(action) }
+            if group.actions.count > 8 {
+                Menu(group.category.rawValue) { actionButtons(group.actions) }
+            } else {
+                actionButtons(group.actions)
+                Divider()
             }
-            Divider()
         }
         Button("Settings…") { model.showSettings() }
             .keyboardShortcut(",")
         Button("Quit Snapr") { NSApplication.shared.terminate(nil) }
             .keyboardShortcut("q")
+    }
+
+    @ViewBuilder
+    private func actionButtons(_ actions: [SnapAction]) -> some View {
+        ForEach(actions, id: \.self) { action in
+            Button(label(for: action)) { model.perform(action) }
+        }
     }
 
     private func label(for action: SnapAction) -> String {

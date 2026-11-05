@@ -70,19 +70,24 @@ public enum WindowGeometry {
             return LayoutCatalog.frame(for: action, in: visible, current: current, step: step, options: options)
         case .topLeftSixth, .topCenterSixth, .topRightSixth, .bottomLeftSixth, .bottomCenterSixth, .bottomRightSixth:
             return LayoutCatalog.frame(for: action, in: visible, current: current, step: step, options: options)
-        case .verticalSixthLeftTop, .verticalSixthLeftMiddle, .verticalSixthLeftBottom, .verticalSixthRightTop, .verticalSixthRightMiddle, .verticalSixthRightBottom:
+        case .verticalSixthLeftTop, .verticalSixthLeftMiddle, .verticalSixthLeftBottom,
+            .verticalSixthRightTop, .verticalSixthRightMiddle, .verticalSixthRightBottom:
             return LayoutCatalog.frame(for: action, in: visible, current: current, step: step, options: options)
-        case .topFirstEighth, .topSecondEighth, .topThirdEighth, .topFourthEighth, .bottomFirstEighth, .bottomSecondEighth, .bottomThirdEighth, .bottomFourthEighth:
+        case .topFirstEighth, .topSecondEighth, .topThirdEighth, .topFourthEighth, .bottomFirstEighth,
+            .bottomSecondEighth, .bottomThirdEighth, .bottomFourthEighth:
             return LayoutCatalog.frame(for: action, in: visible, current: current, step: step, options: options)
-        case .verticalEighthLeft1, .verticalEighthLeft2, .verticalEighthLeft3, .verticalEighthLeft4, .verticalEighthRight1, .verticalEighthRight2, .verticalEighthRight3, .verticalEighthRight4:
+        case .verticalEighthLeft1, .verticalEighthLeft2, .verticalEighthLeft3, .verticalEighthLeft4,
+            .verticalEighthRight1, .verticalEighthRight2, .verticalEighthRight3, .verticalEighthRight4:
             return LayoutCatalog.frame(for: action, in: visible, current: current, step: step, options: options)
-        case .ninthTopLeft, .ninthTopCenter, .ninthTopRight, .ninthMiddleLeft, .ninthMiddleCenter, .ninthMiddleRight, .ninthBottomLeft, .ninthBottomCenter, .ninthBottomRight:
+        case .ninthTopLeft, .ninthTopCenter, .ninthTopRight, .ninthMiddleLeft, .ninthMiddleCenter,
+            .ninthMiddleRight, .ninthBottomLeft, .ninthBottomCenter, .ninthBottomRight:
             return LayoutCatalog.frame(for: action, in: visible, current: current, step: step, options: options)
         case .topLeftTwoThirds, .topRightTwoThirds, .bottomLeftTwoThirds, .bottomRightTwoThirds:
             return LayoutCatalog.frame(for: action, in: visible, current: current, step: step, options: options)
         case .centerHalf, .centerProminently, .almostMaximize, .maximizeHeight:
             return LayoutCatalog.frame(for: action, in: visible, current: current, step: step, options: options)
-        case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth, .doubleHeight, .halveHeight, .specifiedSize:
+        case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth,
+            .doubleHeight, .halveHeight, .specifiedSize:
             return LayoutCatalog.frame(for: action, in: visible, current: current, step: step, options: options)
         }
     }

@@ -108,19 +108,24 @@ public enum DefaultShortcuts {
             return LayoutCatalog.defaultCombo(for: action)
         case .topLeftSixth, .topCenterSixth, .topRightSixth, .bottomLeftSixth, .bottomCenterSixth, .bottomRightSixth:
             return LayoutCatalog.defaultCombo(for: action)
-        case .verticalSixthLeftTop, .verticalSixthLeftMiddle, .verticalSixthLeftBottom, .verticalSixthRightTop, .verticalSixthRightMiddle, .verticalSixthRightBottom:
+        case .verticalSixthLeftTop, .verticalSixthLeftMiddle, .verticalSixthLeftBottom,
+            .verticalSixthRightTop, .verticalSixthRightMiddle, .verticalSixthRightBottom:
             return LayoutCatalog.defaultCombo(for: action)
-        case .topFirstEighth, .topSecondEighth, .topThirdEighth, .topFourthEighth, .bottomFirstEighth, .bottomSecondEighth, .bottomThirdEighth, .bottomFourthEighth:
+        case .topFirstEighth, .topSecondEighth, .topThirdEighth, .topFourthEighth, .bottomFirstEighth,
+            .bottomSecondEighth, .bottomThirdEighth, .bottomFourthEighth:
             return LayoutCatalog.defaultCombo(for: action)
-        case .verticalEighthLeft1, .verticalEighthLeft2, .verticalEighthLeft3, .verticalEighthLeft4, .verticalEighthRight1, .verticalEighthRight2, .verticalEighthRight3, .verticalEighthRight4:
+        case .verticalEighthLeft1, .verticalEighthLeft2, .verticalEighthLeft3, .verticalEighthLeft4,
+            .verticalEighthRight1, .verticalEighthRight2, .verticalEighthRight3, .verticalEighthRight4:
             return LayoutCatalog.defaultCombo(for: action)
-        case .ninthTopLeft, .ninthTopCenter, .ninthTopRight, .ninthMiddleLeft, .ninthMiddleCenter, .ninthMiddleRight, .ninthBottomLeft, .ninthBottomCenter, .ninthBottomRight:
+        case .ninthTopLeft, .ninthTopCenter, .ninthTopRight, .ninthMiddleLeft, .ninthMiddleCenter,
+            .ninthMiddleRight, .ninthBottomLeft, .ninthBottomCenter, .ninthBottomRight:
             return LayoutCatalog.defaultCombo(for: action)
         case .topLeftTwoThirds, .topRightTwoThirds, .bottomLeftTwoThirds, .bottomRightTwoThirds:
             return LayoutCatalog.defaultCombo(for: action)
         case .centerHalf, .centerProminently, .almostMaximize, .maximizeHeight:
             return LayoutCatalog.defaultCombo(for: action)
-        case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth, .doubleHeight, .halveHeight, .specifiedSize:
+        case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth,
+            .doubleHeight, .halveHeight, .specifiedSize:
             return LayoutCatalog.defaultCombo(for: action)
         }
         return KeyCombo(keyCode: key, modifiers: modifiers)

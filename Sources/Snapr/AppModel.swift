@@ -12,6 +12,7 @@ final class AppModel: ObservableObject {
     let screens = SystemScreenProvider()
     let hotkeys = HotkeyManager()
     let overlay = PreviewOverlay()
+    let hud = MinimumSizeHUD()
     let controller: SnapController
     private(set) lazy var dragMonitor = DragSnapMonitor(
         windows: windows, screens: screens, controller: controller, settings: settings, overlay: overlay)
@@ -26,7 +27,9 @@ final class AppModel: ObservableObject {
     private let settingsWindow = WindowPresenter()
 
     private init() {
-        controller = SnapController(windows: windows, screens: screens)
+        let store = settings
+        controller = SnapController(windows: windows, screens: screens, options: { store.get(.layoutOptions) })
+        controller.onMinimumSizeReached = { [hud] target, actual in hud.show(near: actual) }
         settings.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)

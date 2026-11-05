@@ -125,19 +125,24 @@ public enum SnapAction: String, CaseIterable, Codable, Hashable {
             return LayoutCatalog.title(for: self)
         case .topLeftSixth, .topCenterSixth, .topRightSixth, .bottomLeftSixth, .bottomCenterSixth, .bottomRightSixth:
             return LayoutCatalog.title(for: self)
-        case .verticalSixthLeftTop, .verticalSixthLeftMiddle, .verticalSixthLeftBottom, .verticalSixthRightTop, .verticalSixthRightMiddle, .verticalSixthRightBottom:
+        case .verticalSixthLeftTop, .verticalSixthLeftMiddle, .verticalSixthLeftBottom,
+            .verticalSixthRightTop, .verticalSixthRightMiddle, .verticalSixthRightBottom:
             return LayoutCatalog.title(for: self)
-        case .topFirstEighth, .topSecondEighth, .topThirdEighth, .topFourthEighth, .bottomFirstEighth, .bottomSecondEighth, .bottomThirdEighth, .bottomFourthEighth:
+        case .topFirstEighth, .topSecondEighth, .topThirdEighth, .topFourthEighth, .bottomFirstEighth,
+            .bottomSecondEighth, .bottomThirdEighth, .bottomFourthEighth:
             return LayoutCatalog.title(for: self)
-        case .verticalEighthLeft1, .verticalEighthLeft2, .verticalEighthLeft3, .verticalEighthLeft4, .verticalEighthRight1, .verticalEighthRight2, .verticalEighthRight3, .verticalEighthRight4:
+        case .verticalEighthLeft1, .verticalEighthLeft2, .verticalEighthLeft3, .verticalEighthLeft4,
+            .verticalEighthRight1, .verticalEighthRight2, .verticalEighthRight3, .verticalEighthRight4:
             return LayoutCatalog.title(for: self)
-        case .ninthTopLeft, .ninthTopCenter, .ninthTopRight, .ninthMiddleLeft, .ninthMiddleCenter, .ninthMiddleRight, .ninthBottomLeft, .ninthBottomCenter, .ninthBottomRight:
+        case .ninthTopLeft, .ninthTopCenter, .ninthTopRight, .ninthMiddleLeft, .ninthMiddleCenter,
+            .ninthMiddleRight, .ninthBottomLeft, .ninthBottomCenter, .ninthBottomRight:
             return LayoutCatalog.title(for: self)
         case .topLeftTwoThirds, .topRightTwoThirds, .bottomLeftTwoThirds, .bottomRightTwoThirds:
             return LayoutCatalog.title(for: self)
         case .centerHalf, .centerProminently, .almostMaximize, .maximizeHeight:
             return LayoutCatalog.title(for: self)
-        case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth, .doubleHeight, .halveHeight, .specifiedSize:
+        case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth,
+            .doubleHeight, .halveHeight, .specifiedSize:
             return LayoutCatalog.title(for: self)
         }
     }
@@ -154,19 +159,24 @@ public enum SnapAction: String, CaseIterable, Codable, Hashable {
             return LayoutCatalog.category(for: self)
         case .topLeftSixth, .topCenterSixth, .topRightSixth, .bottomLeftSixth, .bottomCenterSixth, .bottomRightSixth:
             return LayoutCatalog.category(for: self)
-        case .verticalSixthLeftTop, .verticalSixthLeftMiddle, .verticalSixthLeftBottom, .verticalSixthRightTop, .verticalSixthRightMiddle, .verticalSixthRightBottom:
+        case .verticalSixthLeftTop, .verticalSixthLeftMiddle, .verticalSixthLeftBottom,
+            .verticalSixthRightTop, .verticalSixthRightMiddle, .verticalSixthRightBottom:
             return LayoutCatalog.category(for: self)
-        case .topFirstEighth, .topSecondEighth, .topThirdEighth, .topFourthEighth, .bottomFirstEighth, .bottomSecondEighth, .bottomThirdEighth, .bottomFourthEighth:
+        case .topFirstEighth, .topSecondEighth, .topThirdEighth, .topFourthEighth, .bottomFirstEighth,
+            .bottomSecondEighth, .bottomThirdEighth, .bottomFourthEighth:
             return LayoutCatalog.category(for: self)
-        case .verticalEighthLeft1, .verticalEighthLeft2, .verticalEighthLeft3, .verticalEighthLeft4, .verticalEighthRight1, .verticalEighthRight2, .verticalEighthRight3, .verticalEighthRight4:
+        case .verticalEighthLeft1, .verticalEighthLeft2, .verticalEighthLeft3, .verticalEighthLeft4,
+            .verticalEighthRight1, .verticalEighthRight2, .verticalEighthRight3, .verticalEighthRight4:
             return LayoutCatalog.category(for: self)
-        case .ninthTopLeft, .ninthTopCenter, .ninthTopRight, .ninthMiddleLeft, .ninthMiddleCenter, .ninthMiddleRight, .ninthBottomLeft, .ninthBottomCenter, .ninthBottomRight:
+        case .ninthTopLeft, .ninthTopCenter, .ninthTopRight, .ninthMiddleLeft, .ninthMiddleCenter,
+            .ninthMiddleRight, .ninthBottomLeft, .ninthBottomCenter, .ninthBottomRight:
             return LayoutCatalog.category(for: self)
         case .topLeftTwoThirds, .topRightTwoThirds, .bottomLeftTwoThirds, .bottomRightTwoThirds:
             return LayoutCatalog.category(for: self)
         case .centerHalf, .centerProminently, .almostMaximize, .maximizeHeight:
             return LayoutCatalog.category(for: self)
-        case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth, .doubleHeight, .halveHeight, .specifiedSize:
+        case .larger, .smaller, .moveLeft, .moveRight, .moveUp, .moveDown, .doubleWidth, .halveWidth,
+            .doubleHeight, .halveHeight, .specifiedSize:
             return LayoutCatalog.category(for: self)
         }
     }
