@@ -113,3 +113,39 @@ final class SettingsIndexTests: XCTestCase {
         XCTAssertEqual(custom.search("startup login").map(\.id), ["general.title", "general.mixed"])
     }
 }
+
+/// Guards drift between catalog entries and the `.settingTarget("<id>")` anchors in the views.
+final class SettingsAnchorDriftTests: XCTestCase {
+    private func anchorLiterals() throws -> [String] {
+        let dir = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Sources/Snapr")
+        let files = try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "swift" }
+        let regex = try NSRegularExpression(pattern: #"(?:\.settingTarget\(|targetID: )"([^"\\]+)""#)
+        var found: [String] = []
+        for file in files {
+            let text = try String(contentsOf: file, encoding: .utf8)
+            let range = NSRange(text.startIndex..., in: text)
+            for match in regex.matches(in: text, range: range) {
+                if let r = Range(match.range(at: 1), in: text) { found.append(String(text[r])) }
+            }
+        }
+        return found
+    }
+
+    func testEveryStaticCatalogEntryHasExactlyOneAnchor() throws {
+        let anchors = try anchorLiterals()
+        XCTAssertFalse(anchors.isEmpty, "no anchors found; is the path resolution broken?")
+        for entry in SettingsIndex.standard.entries where !entry.id.hasPrefix("shortcuts.action.") {
+            XCTAssertEqual(anchors.filter { $0 == entry.id }.count, 1, "anchor count for \(entry.id)")
+        }
+    }
+
+    func testEveryLiteralAnchorHasAnEntry() throws {
+        let ids = Set(SettingsIndex.standard.entries.map(\.id))
+        for anchor in try anchorLiterals() {
+            XCTAssertTrue(ids.contains(anchor), "anchor \(anchor) has no catalog entry")
+        }
+    }
+}

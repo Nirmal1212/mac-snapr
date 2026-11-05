@@ -32,6 +32,7 @@ struct SettingsView: View {
         }
         .searchable(text: $query, placement: .sidebar, prompt: "Search settings")
         .onExitCommand { query = "" }
+        .onChange(of: query) { _ in resultSelection = nil }
         .background(findShortcut)
         .frame(minWidth: 760, minHeight: 520)
     }
@@ -86,6 +87,8 @@ struct SettingsView: View {
                 guard let id, let entry = Self.index.entries.first(where: { $0.id == id }) else { return }
                 storedSection = entry.section.rawValue
                 scrollRequest = ScrollRequest(id: id)
+                // Clear on the next turn so choosing the same result again re-navigates.
+                DispatchQueue.main.async { resultSelection = nil }
             })
     }
 
@@ -158,14 +161,25 @@ private struct SettingsDetail: View {
         }
     }
 
-    /// Scrolls to the requested setting once the section has been laid out, then flashes the highlight for ~1s.
+    /// Scrolls to the requested setting, retrying for about a second while the section lays out (long sections
+    /// such as Shortcuts take a moment), then flashes the highlight for ~1s.
     private func reveal(_ proxy: ScrollViewProxy) {
-        guard let target = scrollRequest else { return }
+        guard let target = scrollRequest, let token else { return }
+        attempt(proxy, target: target, token: token, remaining: 5)
+    }
+
+    private func attempt(_ proxy: ScrollViewProxy, target: String, token: UUID, remaining: Int) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            guard self.token == token else { return }  // superseded by a newer request
             withAnimation { proxy.scrollTo(target, anchor: .center) }
-            highlighted = target
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                if highlighted == target { highlighted = nil }
+            if remaining == 5 {
+                highlighted = target
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    if highlighted == target { highlighted = nil }
+                }
+            }
+            if remaining > 1 {
+                attempt(proxy, target: target, token: token, remaining: remaining - 1)
             }
         }
     }

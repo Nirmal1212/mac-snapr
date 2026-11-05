@@ -41,10 +41,8 @@ struct GeneralSettingsSection: View {
                     Button("Grant Access…") { model.requestAccessibility() }
                 }
             }
-            // MENU-INTRO (task 3): add here
-            //   Toggle("Show intro when opening the menu", isOn: settings.binding(.showIntroOnOpen))
-            //       .settingTarget("general.show-intro")
-            // The search entry "general.show-intro" already exists in SettingsCatalog.swift.
+            Toggle("Show intro when opening the menu", isOn: settings.binding(.showIntroOnOpen))
+                .settingTarget("general.show-intro")
         }
     }
 }
