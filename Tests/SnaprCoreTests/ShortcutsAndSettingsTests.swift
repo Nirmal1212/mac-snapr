@@ -10,7 +10,7 @@ final class ShortcutsAndSettingsTests: XCTestCase {
 
     func testEveryCoreActionHasUniqueDefault() {
         // Layout-engine actions ship mostly unbound; they only need defaults that never collide.
-        let core = SnapAction.allCases.filter { !LayoutCatalog.actions.contains($0) }
+        let core = SnapAction.allCases.filter { !LayoutCatalog.actions.contains($0) && !$0.isMultiWindow }
         XCTAssertEqual(core.compactMap { DefaultShortcuts.combo(for: $0) }.count, core.count)
         let combos = SnapAction.allCases.compactMap { DefaultShortcuts.combo(for: $0) }
         XCTAssertEqual(Set(combos).count, combos.count)

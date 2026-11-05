@@ -101,6 +101,8 @@ public final class AutomationRouter {
         case ignored(String)
         case unignored(String)
         case unknownAction(String)
+        /// Action exists but may not be run from a URL (persistent-state change).
+        case refused(String)
         case ignoreListFull
         case invalidURL
     }
@@ -127,6 +129,7 @@ public final class AutomationRouter {
         switch command {
         case .executeAction(let name):
             if let action = ActionRegistry.action(named: name) {
+                guard !action.isURLRestricted else { return .refused(name) }  // add-multi-window-modes
                 host?.perform(action)
                 return .performed(action)
             }

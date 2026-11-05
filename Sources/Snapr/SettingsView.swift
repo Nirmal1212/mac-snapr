@@ -43,6 +43,7 @@ struct SettingsView: View {
             layoutSection
             gapSection
             InputSettingsSections(model: model)
+            MultiWindowSettingsSections(model: model)  // add-multi-window-modes
             CustomLayoutSections(model: model)
             Section("Shortcuts") {
                 ForEach(ActionRegistry.grouped(), id: \.category) { group in

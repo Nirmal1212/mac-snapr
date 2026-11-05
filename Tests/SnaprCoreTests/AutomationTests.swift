@@ -45,10 +45,12 @@ final class AutomationTests: XCTestCase {
 
     func testRouterExecutesEveryRegisteredAction() {
         let (router, host, _) = makeRouter()
-        for action in ActionRegistry.all {
+        // Persistent-state actions (Todo mode) are refused from URLs; see MultiWindowSecurityTests.
+        let allowed = ActionRegistry.all.filter { !$0.isURLRestricted }
+        for action in allowed {
             XCTAssertEqual(router.handle(url("snapr://execute-action?name=\(action.name)")), .performed(action))
         }
-        XCTAssertEqual(host.performed, ActionRegistry.all)
+        XCTAssertEqual(host.performed, allowed)
     }
 
     func testRouterRejectsUnknownAction() {
