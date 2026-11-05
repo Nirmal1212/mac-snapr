@@ -8,9 +8,11 @@ final class ShortcutsAndSettingsTests: XCTestCase {
         XCTAssertEqual(combo?.displayString, "⌃⌥←")
     }
 
-    func testEveryActionHasUniqueDefault() {
+    func testEveryCoreActionHasUniqueDefault() {
+        // Layout-engine actions ship mostly unbound; they only need defaults that never collide.
+        let core = SnapAction.allCases.filter { !LayoutCatalog.actions.contains($0) }
+        XCTAssertEqual(core.compactMap { DefaultShortcuts.combo(for: $0) }.count, core.count)
         let combos = SnapAction.allCases.compactMap { DefaultShortcuts.combo(for: $0) }
-        XCTAssertEqual(combos.count, SnapAction.allCases.count)
         XCTAssertEqual(Set(combos).count, combos.count)
     }
 

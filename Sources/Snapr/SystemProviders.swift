@@ -13,7 +13,8 @@ final class SystemScreenProvider: ScreenProvider {
             return ScreenInfo(
                 id: number ?? index,
                 frame: CoordinateSpace.flip(screen.frame, primaryHeight: height),
-                visibleFrame: CoordinateSpace.flip(screen.visibleFrame, primaryHeight: height))
+                visibleFrame: CoordinateSpace.flip(screen.visibleFrame, primaryHeight: height),
+                safeAreaTop: screen.safeAreaInsets.top)
         }
     }
 

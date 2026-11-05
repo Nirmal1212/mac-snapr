@@ -13,6 +13,7 @@ final class AppModel: ObservableObject, AutomationHost {
     let hotkeys = HotkeyManager()
     let overlay = PreviewOverlay()
     let updater: UpdateChecking = SparkleUpdater()
+    let hud = MinimumSizeHUD()
     let controller: SnapController
     let debugLog = DebugLog(isEnabled: { HiddenPreferences().debugLogging })
     private(set) lazy var router = AutomationRouter(settings: settings, host: self, log: debugLog)
@@ -37,7 +38,9 @@ final class AppModel: ObservableObject, AutomationHost {
     private let debugWindow = WindowPresenter()
 
     private init() {
-        controller = SnapController(windows: windows, screens: screens)
+        let store = settings
+        controller = SnapController(windows: windows, screens: screens, options: { store.get(.layoutOptions) })
+        controller.onMinimumSizeReached = { [hud] _, actual in hud.show(near: actual) }
         windows.compatibility = WindowCompatibility(settings: settings)
         windows.debugLog = debugLog
         settings.objectWillChange

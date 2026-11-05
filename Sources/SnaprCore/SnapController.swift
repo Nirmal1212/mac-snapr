@@ -10,6 +10,7 @@ public final class SnapController {
 
     private let windows: WindowProvider
     private let screens: ScreenProvider
+    private let optionsProvider: () -> LayoutOptions
     public let restoreStore: RestoreStore
     private var lastSnap: [WindowID: LastSnap] = [:]
     /// Rules for moving windows between displays.
@@ -17,10 +18,19 @@ public final class SnapController {
     /// Moves the cursor when `displayRules.moveCursorWithWindow` is on.
     public var cursor: CursorProvider?
 
-    public init(windows: WindowProvider, screens: ScreenProvider, restoreStore: RestoreStore = RestoreStore()) {
+    /// Called when a window could not reach the requested size (app minimum size, or the
+    /// Smaller limit); arguments are the requested and the resulting frame.
+    public var onMinimumSizeReached: ((_ target: CGRect, _ actual: CGRect) -> Void)?
+
+    /// - Parameter options: live layout settings; evaluated on every action.
+    public init(
+        windows: WindowProvider, screens: ScreenProvider, restoreStore: RestoreStore = RestoreStore(),
+        options: @escaping () -> LayoutOptions = { LayoutOptions() }
+    ) {
         self.windows = windows
         self.screens = screens
         self.restoreStore = restoreStore
+        self.optionsProvider = options
     }
 
     /// Performs `action` on the focused window. Returns true if a window was changed.
@@ -41,6 +51,7 @@ public final class SnapController {
         guard window.canMove else { return false }
         let all = screens.screens()
         guard let current = screen ?? ScreenGeometry.screen(containing: window.frame, in: all) else { return false }
+        let options = optionsProvider()
 
         switch action {
         case .restore:
@@ -57,35 +68,96 @@ public final class SnapController {
             return move(window, from: current, to: destination)
 
         default:
-            let previous = lastSnap[window.id]
-            let stillSnapped = previous.map { WindowGeometry.approximatelyEqual(window.frame, $0.frame) } ?? false
-            var step = 0
-            let cycleLength = WindowGeometry.cycleLength(for: action)
-            if let previous, stillSnapped, previous.action == action, cycleLength > 1 {
-                step = (previous.step + 1) % cycleLength
-            }
-            guard let target = WindowGeometry.frame(
-                for: action, in: current.visibleFrame, current: window.frame, step: step)
-            else { return false }
-
-            // Keep the oldest pre-snap frame while the window is still where we left it; otherwise
-            // the user moved it manually, so the current frame becomes the new restore point.
-            restoreStore.record(restoreFrame ?? window.frame, for: window.id, overwrite: !stillSnapped)
-            guard let result = apply(target, to: window, bounds: current.visibleFrame) else { return false }
-            lastSnap[window.id] = LastSnap(action: action, step: step, frame: result)
-            return true
+            return snap(action, window: window, screen: current, all: all, options: options, restoreFrame: restoreFrame)
         }
     }
 
-    /// Sets the frame, degrading gracefully for fixed-size windows and size-limited apps.
+    /// Restores the pre-snap size of a window the user starts dragging out of a snapped position.
+    /// - Returns: the new frame, or nil when nothing was done.
+    @discardableResult
+    public func unsnap(_ id: WindowID, snappedFrame: CGRect, current: CGRect, cursor: CGPoint) -> CGRect? {
+        guard optionsProvider().unsnapRestoresSize,
+            let last = lastSnap[id], WindowGeometry.approximatelyEqual(snappedFrame, last.frame),
+            let original = restoreStore.frame(for: id)
+        else { return nil }
+        let target = LayoutEngine.unsnapped(current: current, restoreSize: original.size, cursor: cursor)
+        guard let result = windows.setFrame(target, for: id) else { return nil }
+        restoreStore.clear(id)
+        lastSnap[id] = nil
+        return result
+    }
+
+    // MARK: Region actions
+
+    private func snap(
+        _ requested: SnapAction, window: WindowInfo, screen: ScreenInfo, all: [ScreenInfo],
+        options: LayoutOptions, restoreFrame: CGRect?
+    ) -> Bool {
+        let action = requested
+        var screen = screen
+        let previous = lastSnap[window.id]
+        let stillSnapped = previous.map { WindowGeometry.approximatelyEqual(window.frame, $0.frame) } ?? false
+        var step = 0
+
+        if let previous, stillSnapped {
+            if action == .maximize, previous.action == .maximize, options.repeatedMaximizeRestores,
+                restoreStore.frame(for: window.id) != nil {
+                return perform(.restore, on: window, screen: screen)
+            }
+            if previous.action == action {
+                let length = WindowGeometry.cycleLength(for: action, options: options)
+                if options.repeatBehavior == .moveToAdjacentDisplay,
+                    let neighbor = adjacentScreen(of: screen, in: all, action: action) {
+                    screen = neighbor
+                } else if length > 1 {
+                    step = (previous.step + 1) % length
+                }
+            } else if options.oppositeSideSwitch, Self.isOppositeHalf(previous.action, action) {
+                step = previous.step
+            }
+        }
+
+        let isPrimary = LayoutEngine.isPrimary(screen, in: all)
+        let area = LayoutEngine.area(for: screen, action: action, isPrimary: isPrimary, options: options.gaps)
+        guard let target = LayoutEngine.target(
+            for: action, on: screen, isPrimary: isPrimary, current: window.frame, step: step, options: options)
+        else { return false }
+
+        // Keep the oldest pre-snap frame while the window is still where we left it; otherwise
+        // the user moved it manually, so the current frame becomes the new restore point.
+        restoreStore.record(restoreFrame ?? window.frame, for: window.id, overwrite: !stillSnapped)
+        guard let result = apply(target, to: window, bounds: area) else { return false }
+        lastSnap[window.id] = LastSnap(action: action, step: step, frame: result)
+
+        let reachedLimit = action == .smaller && result.size == window.frame.size
+        if window.canResize, reachedLimit || LayoutEngine.missedTarget(result, target: target) {
+            onMinimumSizeReached?(target, result)
+        }
+        return true
+    }
+
+    private static func isOppositeHalf(_ a: SnapAction, _ b: SnapAction) -> Bool {
+        (a == .leftHalf && b == .rightHalf) || (a == .rightHalf && b == .leftHalf)
+    }
+
+    /// The screen next to `screen` in the direction of a left/right half action (no wrapping).
+    private func adjacentScreen(of screen: ScreenInfo, in all: [ScreenInfo], action: SnapAction) -> ScreenInfo? {
+        guard action == .leftHalf || action == .rightHalf else { return nil }
+        let list = ScreenGeometry.ordered(all)
+        guard let index = list.firstIndex(where: { $0.id == screen.id }) else { return nil }
+        let next = index + (action == .rightHalf ? 1 : -1)
+        return list.indices.contains(next) ? list[next] : nil
+    }
+
+    /// Sets the frame, degrading gracefully for fixed-size windows and size-limited apps: a window
+    /// that cannot reach the target is aligned to the target's edge/corner and kept inside `bounds`.
     private func apply(_ target: CGRect, to window: WindowInfo, bounds: CGRect) -> CGRect? {
         var frame = target
         if !window.canResize {
             frame = WindowGeometry.clamped(CGRect(origin: target.origin, size: window.frame.size), to: bounds)
         }
         guard let result = windows.setFrame(frame, for: window.id) else { return nil }
-        // An app with a minimum size may overflow the target; pull it back inside if only a move is needed.
-        let fixed = WindowGeometry.clamped(result, to: bounds)
+        let fixed = WindowGeometry.clamped(LayoutEngine.fit(result, target: frame, in: bounds), to: bounds)
         if fixed.size == result.size, !WindowGeometry.approximatelyEqual(fixed, result, tolerance: 1) {
             return windows.setFrame(fixed, for: window.id) ?? result
         }

@@ -145,11 +145,18 @@ public enum DragZones {
 
     /// Zone for a point across all screens, together with its target frame (nil when drag snap is off).
     public static func target(
-        at point: CGPoint, screens: [ScreenInfo], enabled: Bool, options: DragSnapOptions = DragSnapOptions()
+        at point: CGPoint, screens: [ScreenInfo], enabled: Bool, options: DragSnapOptions = DragSnapOptions(),
+        layout: LayoutOptions = LayoutOptions()
     ) -> (zone: DragZone, screen: ScreenInfo, frame: CGRect)? {
         guard enabled, let screen = screens.first(where: { $0.frame.contains(point) }),
             let zone = zone(at: point, in: screen.frame, options: options)
         else { return nil }
+        // Snap actions go through the layout engine so the preview matches the gap-aware result.
+        if let action = zone.action,
+            let frame = LayoutEngine.target(
+                for: action, on: screen, isPrimary: LayoutEngine.isPrimary(screen, in: screens), options: layout) {
+            return (zone, screen, frame)
+        }
         return (zone, screen, zone.frame(in: screen.visibleFrame))
     }
 }

@@ -28,6 +28,7 @@ final class DragSnapMonitor {
     private var tracked: WindowInfo?
     private var startFrame: CGRect = .zero
     private var confirmedDrag = false
+    private var unsnapChecked = false
     private var activeTarget: (zone: DragZone, screen: ScreenInfo, frame: CGRect)?
 
     init(
@@ -63,6 +64,7 @@ final class DragSnapMonitor {
         hitTested = false
         tracked = nil
         confirmedDrag = false
+        unsnapChecked = false
         activeTarget = nil
         overlay.hide()
     }
@@ -100,8 +102,11 @@ final class DragSnapMonitor {
     }
 
     private func drag(_ window: WindowInfo, at point: CGPoint, held: KeyModifiers) {
+        restoreSizeIfUnsnapping(window, at: point)
         guard options.modifiersSatisfied(by: held),
-            let target = DragZones.target(at: point, screens: screens.screens(), enabled: true, options: options)
+            let target = DragZones.target(
+                at: point, screens: screens.screens(), enabled: true, options: options,
+                layout: settings.get(.layoutOptions))
         else {
             activeTarget = nil
             overlay.hide()
@@ -114,6 +119,17 @@ final class DragSnapMonitor {
         }
         activeTarget = target
         overlay.show(frame: target.frame)
+    }
+
+    /// First move of a window Snapr snapped: give it back its pre-snap size under the cursor.
+    private func restoreSizeIfUnsnapping(_ window: WindowInfo, at point: CGPoint) {
+        guard !unsnapChecked, let now = windows.currentFrame(of: window.id),
+            isMove(from: startFrame, to: now)
+        else { return }
+        unsnapChecked = true
+        if let restored = controller.unsnap(window.id, snappedFrame: startFrame, current: now, cursor: point) {
+            startFrame = restored
+        }
     }
 
     private func isMove(from old: CGRect, to new: CGRect) -> Bool {

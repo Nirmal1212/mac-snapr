@@ -40,6 +40,8 @@ struct SettingsView: View {
                     }
                 }
             }
+            layoutSection
+            gapSection
             InputSettingsSections(model: model)
             Section("Shortcuts") {
                 ForEach(ActionRegistry.grouped(), id: \.category) { group in
@@ -86,6 +88,87 @@ struct SettingsView: View {
                 Text("\(pending.combo.displayString) is assigned to “\(pending.other.title)”. Reassign it to “\(pending.action.title)”?")
             }
         }
+    }
+
+    // MARK: Layout options
+
+    private var layoutSection: some View {
+        Section("Layout") {
+            Picker("Repeat half cycle order", selection: layout(\.halfCycleOrder)) {
+                ForEach(HalfCycleOrder.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            Picker("Repeating left/right half", selection: layout(\.repeatBehavior)) {
+                ForEach(RepeatBehavior.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            Toggle("Repeating a quarter cycles through quadrants", isOn: layout(\.quadrantCycling))
+            Toggle("Opposite half keeps the current width", isOn: layout(\.oppositeSideSwitch))
+            Toggle("Repeating Maximize restores the window", isOn: layout(\.repeatedMaximizeRestores))
+            Toggle("Halves keep the window's other axis", isOn: layout(\.halvesKeepOtherAxis))
+            Toggle("Dragging a snapped window restores its size", isOn: layout(\.unsnapRestoresSize))
+            Toggle("Thirds stack vertically on portrait displays", isOn: layout(\.portraitAwareThirds))
+            Stepper(
+                "Almost Maximize: \(Int((layoutOptions.almostMaximizeFraction * 100).rounded()))%",
+                value: layout(\.almostMaximizeFraction), in: 0.5...1, step: 0.05)
+            Stepper("Larger / Smaller step: \(Int(layoutOptions.resizeStep)) pt", value: layout(\.resizeStep), in: 5...200, step: 5)
+            Stepper(
+                "Specified size width: \(Int(layoutOptions.specifiedSize.width)) pt",
+                value: layoutSize(\.width), in: 200...8000, step: 20)
+            Stepper(
+                "Specified size height: \(Int(layoutOptions.specifiedSize.height)) pt",
+                value: layoutSize(\.height), in: 200...8000, step: 20)
+        }
+    }
+
+    private var gapSection: some View {
+        Section("Gaps") {
+            Stepper("Between windows: \(Int(layoutOptions.gaps.windowGap)) pt", value: gap(\.windowGap), in: 0...100, step: 1)
+            Stepper("Screen top: \(Int(layoutOptions.gaps.screenGaps.top)) pt", value: gap(\.screenGaps.top), in: 0...200, step: 1)
+            Stepper("Screen left: \(Int(layoutOptions.gaps.screenGaps.left)) pt", value: gap(\.screenGaps.left), in: 0...200, step: 1)
+            Stepper("Screen bottom: \(Int(layoutOptions.gaps.screenGaps.bottom)) pt", value: gap(\.screenGaps.bottom), in: 0...200, step: 1)
+            Stepper("Screen right: \(Int(layoutOptions.gaps.screenGaps.right)) pt", value: gap(\.screenGaps.right), in: 0...200, step: 1)
+            Toggle("Only on the main screen", isOn: gap(\.mainScreenOnly))
+            Toggle("Keep windows below the notch", isOn: gap(\.notchAwareTopGap))
+            Toggle("Use full height when the menu bar is hidden", isOn: gap(\.fullHeightWhenMenuBarHidden))
+            DisclosureGroup("Actions exempt from gaps") {
+                ForEach(ActionRegistry.all, id: \.self) { action in
+                    Toggle(action.title, isOn: exempt(action))
+                }
+            }
+        }
+    }
+
+    private var layoutOptions: LayoutOptions { settings.get(.layoutOptions) }
+
+    private func updateLayout(_ change: (inout LayoutOptions) -> Void) {
+        var options = settings.get(.layoutOptions)
+        change(&options)
+        settings.set(options, for: .layoutOptions)
+    }
+
+    private func layout<V>(_ keyPath: WritableKeyPath<LayoutOptions, V>) -> Binding<V> {
+        Binding(get: { layoutOptions[keyPath: keyPath] }, set: { value in updateLayout { $0[keyPath: keyPath] = value } })
+    }
+
+    private func layoutSize(_ keyPath: WritableKeyPath<CGSize, CGFloat>) -> Binding<CGFloat> {
+        Binding(
+            get: { layoutOptions.specifiedSize[keyPath: keyPath] },
+            set: { value in updateLayout { $0.specifiedSize[keyPath: keyPath] = value } })
+    }
+
+    private func gap<V>(_ keyPath: WritableKeyPath<GapOptions, V>) -> Binding<V> {
+        Binding(
+            get: { layoutOptions.gaps[keyPath: keyPath] },
+            set: { value in updateLayout { $0.gaps[keyPath: keyPath] = value } })
+    }
+
+    private func exempt(_ action: SnapAction) -> Binding<Bool> {
+        Binding(
+            get: { layoutOptions.gaps.isExempt(action) },
+            set: { on in
+                updateLayout {
+                    if on { $0.gaps.exemptActions.insert(action.name) } else { $0.gaps.exemptActions.remove(action.name) }
+                }
+            })
     }
 
     private func row(_ action: SnapAction) -> some View {

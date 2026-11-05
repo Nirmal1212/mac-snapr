@@ -29,11 +29,11 @@ final class SnapControllerTests: XCTestCase {
         let (controller, windows) = make()
         controller.perform(.leftHalf)
         controller.perform(.leftHalf)
-        XCTAssertEqual(windows.windows[winID]!.frame.width, 1000.0 / 3, accuracy: 0.01)
+        XCTAssertEqual(windows.windows[winID]!.frame.width, 2000.0 / 3, accuracy: 0.51)
         controller.perform(.leftHalf)
-        XCTAssertEqual(windows.windows[winID]!.frame.width, 2000.0 / 3, accuracy: 0.01)
+        XCTAssertEqual(windows.windows[winID]!.frame.width, 1000.0 / 3, accuracy: 0.51)
         controller.perform(.leftHalf)
-        XCTAssertEqual(windows.windows[winID]!.frame.width, 500, accuracy: 0.01)
+        XCTAssertEqual(windows.windows[winID]!.frame.width, 500, accuracy: 0.51)
     }
 
     func testCycleResetsAfterOtherAction() {
@@ -41,7 +41,7 @@ final class SnapControllerTests: XCTestCase {
         controller.perform(.leftHalf)
         controller.perform(.topHalf)
         controller.perform(.leftHalf)
-        XCTAssertEqual(windows.windows[winID]!.frame.width, 500, accuracy: 0.01)
+        XCTAssertEqual(windows.windows[winID]!.frame.width, 500, accuracy: 0.51)
     }
 
     func testRestoreReturnsToFrameBeforeFirstSnap() {

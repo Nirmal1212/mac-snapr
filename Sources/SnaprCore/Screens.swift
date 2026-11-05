@@ -6,11 +6,14 @@ public struct ScreenInfo: Equatable, Hashable {
     public var frame: CGRect
     /// Frame excluding menu bar and Dock, same space.
     public var visibleFrame: CGRect
+    /// Height of the camera-housing (notch) safe area at the top; 0 on screens without one.
+    public var safeAreaTop: CGFloat
 
-    public init(id: Int, frame: CGRect, visibleFrame: CGRect) {
+    public init(id: Int, frame: CGRect, visibleFrame: CGRect, safeAreaTop: CGFloat = 0) {
         self.id = id
         self.frame = frame
         self.visibleFrame = visibleFrame
+        self.safeAreaTop = safeAreaTop
     }
 }
 
