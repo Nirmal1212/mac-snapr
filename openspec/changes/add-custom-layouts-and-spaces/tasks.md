@@ -9,11 +9,11 @@
 
 ## 3. Spaces
 - [x] 3.1 `SpaceMoving` protocol, `SpaceActionController`, `spacesEnabled` flag (default off) with tests
-- [ ] 3.2 `PrivateSpaceMover` (dlsym, no SIP changes, verified, no-op when unavailable)
+- [x] 3.2 `PrivateSpaceMover` (dlsym, no SIP changes, verified, no-op when unavailable)
 
 ## 4. App
-- [ ] 4.1 `HotkeyManager` runtime bindings, `AppModel` wiring, `AXWindowLister`
-- [ ] 4.2 Menu entries and Settings section (zones editor, saved layouts, experimental Spaces toggle)
+- [x] 4.1 `HotkeyManager` runtime bindings, `AppModel` wiring, `AXWindowLister`
+- [x] 4.2 Menu entries and Settings section (zones editor, saved layouts, experimental Spaces toggle)
 
 ## 5. Verify
-- [ ] 5.1 `openspec validate add-custom-layouts-and-spaces --strict`, `swift build`, `swift test`
+- [x] 5.1 `openspec validate add-custom-layouts-and-spaces --strict`, `swift build`, `swift test`

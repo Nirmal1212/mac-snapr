@@ -214,3 +214,37 @@ final class AXWindowProvider: WindowProvider {
         }
     }
 }
+
+// MARK: - add-custom-layouts-and-spaces
+
+extension AXWindowProvider: WindowLister {
+    /// The Accessibility element behind an id handed out by this provider (used by the Spaces mover).
+    func axElement(for id: WindowID) -> AXUIElement? { elements[id] }
+
+    /// Standard, visible windows of regular running apps other than Snapr. Ids are registered with this
+    /// provider, so they can be passed straight to `setFrame`.
+    func listWindows() -> [ListedWindow] {
+        guard AXIsProcessTrusted() else { return [] }
+        let myPID = ProcessInfo.processInfo.processIdentifier
+        var result: [ListedWindow] = []
+        for app in NSWorkspace.shared.runningApplications
+        where app.activationPolicy == .regular && app.processIdentifier != myPID {
+            guard let bundleID = app.bundleIdentifier else { continue }
+            let element = AXUIElementCreateApplication(app.processIdentifier)
+            AXUIElementSetMessagingTimeout(element, Self.messagingTimeout)
+            var value: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(element, kAXWindowsAttribute as CFString, &value) == .success,
+                let windows = value as? [AXUIElement]
+            else { continue }
+            for window in windows.prefix(50) {
+                AXUIElementSetMessagingTimeout(window, Self.messagingTimeout)
+                guard Self.string(window, kAXSubroleAttribute) == kAXStandardWindowSubrole as String,
+                    Self.bool(window, kAXMinimizedAttribute) != true, let info = info(for: window)
+                else { continue }
+                result.append(
+                    ListedWindow(info: info, bundleID: bundleID, title: Self.string(window, kAXTitleAttribute) ?? ""))
+            }
+        }
+        return result
+    }
+}
