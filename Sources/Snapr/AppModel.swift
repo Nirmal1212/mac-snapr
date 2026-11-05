@@ -12,6 +12,7 @@ final class AppModel: ObservableObject {
     let screens = SystemScreenProvider()
     let hotkeys = HotkeyManager()
     let overlay = PreviewOverlay()
+    let updater: UpdateChecking = SparkleUpdater()
     let controller: SnapController
     private(set) lazy var dragMonitor = DragSnapMonitor(
         windows: windows, screens: screens, controller: controller, settings: settings, overlay: overlay)
@@ -42,6 +43,13 @@ final class AppModel: ObservableObject {
             .sink { [weak self] _ in self?.applyShortcuts() }
             .store(in: &cancellables)
 
+        applyUpdateSettings()
+        settings.changes
+            .filter { $0 == SettingKey<Bool>.automaticUpdateChecks.name }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.applyUpdateSettings() }
+            .store(in: &cancellables)
+
         refreshTrust()
         if !trusted { showOnboarding() }
         // refreshTrust() owns the poll timer: it polls until access is granted and the drag monitor is up.
@@ -54,6 +62,10 @@ final class AppModel: ObservableObject {
 
     func applyShortcuts() {
         failedShortcuts = hotkeys.register(settings.get(.shortcuts))
+    }
+
+    func applyUpdateSettings() {
+        updater.automaticallyChecks = settings.get(.automaticUpdateChecks)
     }
 
     func refreshTrust() {
