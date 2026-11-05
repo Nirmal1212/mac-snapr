@@ -12,8 +12,8 @@ Settings are a single SwiftUI `Form` made of `Section`s contributed by several c
 
 ### Menu intro
 - **Switch to `MenuBarExtra` with `.window` style** so the content can be a SwiftUI view. The popover has two pages: **Intro** and **Actions**.
-- **Intro page**: app icon, one-sentence description, three tips (keyboard shortcut example from the user's current bindings, drag to an edge, open Settings), the Accessibility status line with a Grant button when needed, and a "Get started" button that moves to Actions and records `introDismissed = true`.
-- **When the intro shows**: on every open until dismissed with "Get started"; afterwards the popover opens on Actions, which has an "Intro" button in its header to return to the intro. Settings > General has "Show intro when opening the menu" to bring the intro back permanently.
+- **Intro page**: app icon, one-sentence description, three tips (keyboard shortcut example from the user's current bindings, drag to an edge, open Settings), the Accessibility status line with a Grant button when needed, and a "Show all options" button that moves to the Actions page.
+- **When the intro shows**: on every open of the popover (every click on the icon), always starting on the Intro page. The Actions page has an "Intro" button in its header to go back. Settings > General has "Show intro when opening the menu" (default on); turning it off makes the popover open directly on Actions.
 - **Actions page** keeps today's content (categorized actions, ignore app, custom zones and layouts, Spaces if enabled, Settings, Check for Updates, Quit) in a scrolling list with category disclosure groups, since `.window` style does not give native submenus. Shortcut labels stay right-aligned. Keyboard: arrow navigation, Return to run, Escape closes the popover.
 
 ## Risks / Trade-offs
@@ -21,5 +21,5 @@ Settings are a single SwiftUI `Form` made of `Section`s contributed by several c
 - The popover steals focus from the frontmost window, so actions must target the previously focused window. Existing behavior already tracks the last non-Snapr frontmost app; reuse it and add a test with the mock provider.
 - Search index can drift from the real controls (see above).
 
-## Open Questions
-- Should the intro show every time the icon is clicked, or only until dismissed? This design assumes until dismissed, with a setting to keep it on.
+## Decisions Confirmed
+- The intro shows on every click of the menu bar icon (confirmed by the product owner), with an opt-out setting.
