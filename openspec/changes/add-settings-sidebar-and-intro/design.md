@@ -23,3 +23,12 @@ Settings are a single SwiftUI `Form` made of `Section`s contributed by several c
 
 ## Decisions Confirmed
 - The intro shows on every click of the menu bar icon (confirmed by the product owner), with an opt-out setting.
+
+## Manual Test Matrix (menu popover)
+The `.window` popover cannot be exercised by unit tests. Before release, on macOS 13 and on macOS 14 or later, repeat each of these 5 times in a row and confirm the popover reopens on the Intro page (or Actions when the intro is off), the menu bar icon highlight is not stuck, and the next icon click opens it again on the first click:
+- Open, then press Escape.
+- Open, then run an action (the previously focused window moves; the popover closes).
+- Open, then click outside the popover.
+- Open, press Return on the Intro page ("Show all options"), then reopen: no row is pre-focused and Return does nothing.
+- Cmd+, and Cmd+Q on both the Intro and Actions pages.
+The dismiss mechanism is the single `dismissPopover()` helper in `MenuPopoverView.swift` (`orderOut`; swap for `close()` if the status item state goes out of sync). Also check Activity Monitor: idle CPU with the popover closed and open stays near 0%.

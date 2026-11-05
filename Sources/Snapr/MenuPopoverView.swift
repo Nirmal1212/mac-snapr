@@ -6,7 +6,12 @@ import SwiftUI
 struct MenuPopoverView: View {
     @ObservedObject var model: AppModel
     @State private var state = MenuPopoverState()
-    @State private var popover: NSWindow?
+    /// Reference box: assigning the window must not invalidate the view (no @State/@Published).
+    @State private var window = PopoverWindowBox()
+    /// Bumped on every open; recreates the pages so focus and expansion state reset.
+    @State private var openCount = 0
+    /// Static for the process; computed once.
+    private static let groups = ActionRegistry.grouped()
 
     private static let width: CGFloat = 320
 
@@ -14,29 +19,45 @@ struct MenuPopoverView: View {
         Group {
             switch state.page {
             case .intro:
-                MenuIntroPage(model: model, showActions: { state.showActions() }, openSettings: openSettings)
+                MenuIntroPage(
+                    model: model, shortcuts: model.settings.get(.shortcuts), showActions: { state.showActions() },
+                    openSettings: openSettings, quit: quit)
             case .actions:
-                MenuActionsPage(model: model, showIntro: { state.showIntro() }, close: close)
+                MenuActionsPage(
+                    model: model, groups: Self.groups, shortcuts: model.settings.get(.shortcuts),
+                    zones: model.customZones, layouts: model.savedLayouts,
+                    showIntro: { state.showIntro() }, close: dismissPopover)
             }
         }
+        .id(openCount)
         .frame(width: Self.width)
-        .background(WindowReader { popover = $0 })
+        .background(WindowReader(box: window))
         // Escape closes the popover (also reachable through the hidden cancel button below).
-        .onExitCommand(perform: close)
-        .background(Button("Close", action: close).keyboardShortcut(.cancelAction).opacity(0).accessibilityHidden(true))
+        .onExitCommand(perform: dismissPopover)
+        .background(Button("Close", action: dismissPopover).keyboardShortcut(.cancelAction).opacity(0).accessibilityHidden(true))
         // The popover content view is created once and kept alive, so `onAppear` only fires for the
         // first open. The panel becoming key is the signal for every open.
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { note in
-            guard let window = note.object as? NSWindow, window === popover else { return }
-            state.didOpen(introEnabled: model.settings.get(.showIntroOnOpen))
+            guard let key = note.object as? NSWindow, key === window.window else { return }
+            didOpen()
         }
-        .onAppear { state.didOpen(introEnabled: model.settings.get(.showIntroOnOpen)) }
+        .onAppear(perform: didOpen)
     }
 
-    private func close() { popover?.close() }
+    private func didOpen() {
+        state.didOpen(introEnabled: model.settings.get(.showIntroOnOpen))
+        openCount += 1
+    }
+
+    /// The single place that dismisses the popover, so the mechanism can be swapped. `orderOut` hides the
+    /// panel without destroying it (the content view and the status item keep their state); `close()` is the
+    /// alternative if the status item highlight ever sticks. See the manual test matrix in design.md.
+    private func dismissPopover() { window.window?.orderOut(nil) }
+
+    private func quit() { NSApplication.shared.terminate(nil) }
 
     private func openSettings() {
-        close()
+        dismissPopover()
         DispatchQueue.main.async { model.showSettings() }
     }
 }
@@ -45,8 +66,10 @@ struct MenuPopoverView: View {
 
 private struct MenuIntroPage: View {
     @ObservedObject var model: AppModel
+    let shortcuts: ShortcutMap
     let showActions: () -> Void
     let openSettings: () -> Void
+    let quit: () -> Void
 
     private static let icon: NSImage? = {
         // Only the packaged app has an AppIcon; `swift run` would show the generic executable icon.
@@ -70,13 +93,13 @@ private struct MenuIntroPage: View {
             }
             Text(IntroContent.summary).fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: 8) {
-                tip("keyboard", IntroContent.shortcutTip(model.settings.get(.shortcuts)))
+                tip("keyboard", IntroContent.shortcutTip(shortcuts))
                 tip("macwindow.badge.plus", IntroContent.dragTip)
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "gearshape").frame(width: 18).foregroundColor(.accentColor).accessibilityHidden(true)
                     Text(IntroContent.settingsTip).fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
-                    Button("Settings…", action: openSettings).controlSize(.small)
+                    Button("Settings…", action: openSettings).controlSize(.small).keyboardShortcut(",")
                 }
             }
             if !model.trusted {
@@ -93,7 +116,7 @@ private struct MenuIntroPage: View {
             }
             Divider()
             HStack {
-                Button("Quit Snapr") { NSApplication.shared.terminate(nil) }
+                Button("Quit Snapr", action: quit).keyboardShortcut("q")
                 Spacer()
                 Button("Show all options", action: showActions).keyboardShortcut(.defaultAction)
             }
@@ -114,6 +137,10 @@ private struct MenuIntroPage: View {
 
 private struct MenuActionsPage: View {
     @ObservedObject var model: AppModel
+    let groups: [(category: ActionCategory, actions: [SnapAction])]
+    let shortcuts: ShortcutMap
+    let zones: [CustomZone]
+    let layouts: [SavedLayout]
     let showIntro: () -> Void
     let close: () -> Void
 
@@ -137,7 +164,7 @@ private struct MenuActionsPage: View {
                             runAfterClose { model.showOnboarding() }
                         }
                     }
-                    ForEach(ActionRegistry.grouped(), id: \.category) { group in
+                    ForEach(groups, id: \.category) { group in
                         let key = group.category.rawValue
                         // Large categories start collapsed, as submenus did in the old menu.
                         section(key, defaultOpen: group.actions.count <= 8) {
@@ -180,15 +207,12 @@ private struct MenuActionsPage: View {
             }
             .padding(6)
         }
-        .onAppear { if focus == nil { focus = firstRowID } }
     }
 
     // MARK: custom zones, layouts, spaces
 
     @ViewBuilder
     private var customSections: some View {
-        let zones = model.customZones
-        let layouts = model.savedLayouts
         if !zones.isEmpty {
             section("Custom Zones", defaultOpen: false) {
                 ForEach(zones) { zone in
@@ -257,7 +281,7 @@ private struct MenuActionsPage: View {
     }
 
     private func shortcut(_ action: SnapAction) -> String? {
-        model.settings.get(.shortcuts).combo(for: action)?.displayString
+        shortcuts.combo(for: action)?.displayString
     }
 
     /// Closes the popover first so focus returns to the previous app, then runs. Window actions target the
@@ -269,8 +293,7 @@ private struct MenuActionsPage: View {
 
     // MARK: keyboard
 
-    /// Focusable ids in display order: group headers plus the rows of open groups.
-    private var firstRowID: String? { model.trusted ? "g:\(ActionRegistry.grouped().first?.category.rawValue ?? "")" : "grant" }
+    // MARK: keyboard order
 
     private func move(_ direction: MoveCommandDirection) {
         let order = focusOrder()
@@ -286,17 +309,15 @@ private struct MenuActionsPage: View {
     private func focusOrder() -> [String] {
         var ids: [String] = []
         if !model.trusted { ids.append("grant") }
-        for group in ActionRegistry.grouped() {
+        for group in groups {
             let key = group.category.rawValue
             ids.append("g:\(key)")
             if isOpen(key, group.actions.count <= 8) { ids += group.actions.map { "a:\($0.name)" } }
         }
-        let zones = model.customZones
         if !zones.isEmpty {
             ids.append("g:Custom Zones")
             if isOpen("Custom Zones", false) { ids += zones.map { "z:\($0.id)" } }
         }
-        let layouts = model.savedLayouts
         if !layouts.isEmpty {
             ids.append("g:Saved Layouts")
             if isOpen("Saved Layouts", false) { ids += layouts.map { "l:\($0.id)" } }
@@ -348,17 +369,22 @@ private struct MenuRow: View {
     }
 }
 
-/// Exposes the hosting `NSWindow` (the popover panel) to SwiftUI.
+/// Non-observable holder for the popover panel.
+final class PopoverWindowBox {
+    weak var window: NSWindow?
+}
+
+/// Exposes the hosting `NSWindow` (the popover panel) to the box without triggering view updates.
 private struct WindowReader: NSViewRepresentable {
-    let onWindow: (NSWindow?) -> Void
+    let box: PopoverWindowBox
 
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
-        DispatchQueue.main.async { onWindow(view.window) }
+        DispatchQueue.main.async { box.window = view.window }
         return view
     }
 
     func updateNSView(_ view: NSView, context: Context) {
-        DispatchQueue.main.async { onWindow(view.window) }
+        if box.window !== view.window { DispatchQueue.main.async { box.window = view.window } }
     }
 }
