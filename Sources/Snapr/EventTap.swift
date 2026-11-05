@@ -26,6 +26,8 @@ final class EventTap {
         self.handler = handler
     }
 
+    deinit { stop() }
+
     var isRunning: Bool { tap != nil }
 
     @discardableResult

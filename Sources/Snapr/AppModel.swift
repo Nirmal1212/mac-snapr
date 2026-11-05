@@ -17,7 +17,8 @@ final class AppModel: ObservableObject {
         windows: windows, screens: screens, controller: controller, settings: settings, overlay: overlay)
 
     private(set) lazy var input = InputCoordinator(
-        settings: settings, windows: windows, screens: screens, controller: controller, overlay: overlay)
+        settings: settings, windows: windows, screens: screens, controller: controller, overlay: overlay,
+        isWindowDrag: { [weak self] in self?.dragMonitor.isWindowDrag ?? false })
 
     @Published private(set) var trusted = AXIsProcessTrusted()
     @Published private(set) var dragRunning = false

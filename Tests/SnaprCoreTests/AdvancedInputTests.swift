@@ -102,6 +102,24 @@ final class TriggerHelperTests: XCTestCase {
         XCTAssertNil(MouseShortcuts.match([MouseShortcut(button: 0, action: .maximize)], button: 0, modifiers: []))
     }
 
+    func testRouterConsumesMatchedPressDragsAndRelease() {
+        let shortcut = MouseShortcut(button: 3, modifiers: [.option], action: .maximize)
+        var router = MouseButtonRouter(shortcuts: [shortcut])
+        XCTAssertEqual(router.route(.down, button: 3, modifiers: [.option]), .run(shortcut))
+        XCTAssertEqual(router.route(.dragged, button: 3, modifiers: []), .consume)
+        XCTAssertEqual(router.route(.up, button: 3, modifiers: []), .consume)
+        XCTAssertEqual(router.route(.up, button: 3, modifiers: []), .passThrough, "release consumed only once")
+    }
+
+    func testRouterPassesThroughUnmatched() {
+        var router = MouseButtonRouter(shortcuts: [MouseShortcut(button: 3, modifiers: [.option], action: .maximize)])
+        XCTAssertEqual(router.route(.down, button: 3, modifiers: []), .passThrough)
+        XCTAssertEqual(router.route(.up, button: 3, modifiers: []), .passThrough)
+        XCTAssertEqual(router.route(.down, button: 2, modifiers: [.option]), .passThrough)
+        XCTAssertEqual(router.route(.dragged, button: 2, modifiers: []), .passThrough)
+        XCTAssertEqual(router.route(.down, button: 0, modifiers: [.option]), .passThrough)
+    }
+
     func testTitleBarHitAndToggle() {
         let window = CGRect(x: 100, y: 100, width: 400, height: 300)
         XCTAssertTrue(TitleBar.contains(CGPoint(x: 200, y: 110), in: window))

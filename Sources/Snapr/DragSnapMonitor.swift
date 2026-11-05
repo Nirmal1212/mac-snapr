@@ -24,6 +24,7 @@ final class DragSnapMonitor {
     private var options = DragSnapOptions()
     private var downPoint: CGPoint?
     private var hitTested = false
+    private var startPoint: CGPoint = .zero
     private var tracked: WindowInfo?
     private var startFrame: CGRect = .zero
     private var confirmedDrag = false
@@ -41,6 +42,13 @@ final class DragSnapMonitor {
     }
 
     var isRunning: Bool { tap.isRunning }
+
+    /// True while a window (resolved at mouse-down) is being dragged from its top strip, i.e. a move
+    /// rather than a resize or in-content drag. Cheap: reads cached state only.
+    var isWindowDrag: Bool {
+        guard tracked != nil else { return false }
+        return TitleBar.contains(startPoint, in: startFrame, height: 100)
+    }
 
     @discardableResult
     func start() -> Bool { tap.start() }
@@ -87,6 +95,7 @@ final class DragSnapMonitor {
     private func resolveWindow(downPoint: CGPoint, now: CGPoint) {
         guard let window = windows.window(at: downPoint) else { return }
         tracked = window
+        startPoint = downPoint
         startFrame = window.frame.offsetBy(dx: downPoint.x - now.x, dy: downPoint.y - now.y)
     }
 

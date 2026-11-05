@@ -61,6 +61,22 @@ final class AXWindowProvider: WindowProvider {
     }
 
     func window(at point: CGPoint) -> WindowInfo? {
+        hitTest(at: point)?.window
+    }
+
+    /// Roles that make up window chrome; buttons, tabs, fields and other controls are excluded.
+    private static let titleBarRoles: Set<String> = [
+        kAXWindowRole as String, kAXStaticTextRole as String, kAXToolbarRole as String,
+        kAXGroupRole as String, kAXImageRole as String
+    ]
+
+    /// The window whose title bar (not a toolbar control, tab or button) is under `point`.
+    func titleBarWindow(at point: CGPoint) -> WindowInfo? {
+        guard let hit = hitTest(at: point), let role = hit.role, Self.titleBarRoles.contains(role) else { return nil }
+        return hit.window
+    }
+
+    private func hitTest(at point: CGPoint) -> (window: WindowInfo, role: String?)? {
         guard AXIsProcessTrusted() else { return nil }
         var hit: AXUIElement?
         let status = AXUIElementCopyElementAtPosition(
@@ -71,7 +87,8 @@ final class AXWindowProvider: WindowProvider {
         if AXUIElementGetPid(hit, &pid) == .success, pid == ProcessInfo.processInfo.processIdentifier { return nil }
         let role = Self.string(hit, kAXRoleAttribute)
         let window = role == kAXWindowRole as String ? hit : Self.element(hit, kAXWindowAttribute)
-        return window.flatMap(info(for:))
+        guard let info = window.flatMap(info(for:)) else { return nil }
+        return (info, role)
     }
 
     func currentFrame(of id: WindowID) -> CGRect? {

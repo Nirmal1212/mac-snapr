@@ -114,6 +114,43 @@ public enum MouseShortcuts {
     }
 }
 
+public enum MouseButtonPhase { case down, up, dragged }
+
+public enum MouseDecision: Equatable {
+    /// Deliver the event unchanged.
+    case passThrough
+    /// Swallow the event (continuation of a matched press).
+    case consume
+    /// Swallow the event and run the shortcut.
+    case run(MouseShortcut)
+}
+
+/// Decides, per event, whether a mouse-button event is consumed. A matched press is consumed
+/// together with its drags and release; everything else passes through.
+public struct MouseButtonRouter {
+    public var shortcuts: [MouseShortcut]
+    private var consumed: Set<Int> = []
+
+    public init(shortcuts: [MouseShortcut] = []) { self.shortcuts = shortcuts }
+
+    public mutating func reset() { consumed.removeAll() }
+
+    public mutating func route(_ phase: MouseButtonPhase, button: Int, modifiers: KeyModifiers) -> MouseDecision {
+        switch phase {
+        case .down:
+            guard let match = MouseShortcuts.match(shortcuts, button: button, modifiers: modifiers) else {
+                return .passThrough
+            }
+            consumed.insert(button)
+            return .run(match)
+        case .up:
+            return consumed.remove(button) != nil ? .consume : .passThrough
+        case .dragged:
+            return consumed.contains(button) ? .consume : .passThrough
+        }
+    }
+}
+
 /// Title-bar double-click helpers (pure).
 public enum TitleBar {
     public static let height: CGFloat = 28

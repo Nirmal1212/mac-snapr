@@ -13,12 +13,14 @@ final class SystemCursorProvider: CursorProvider {
 final class MouseButtonMonitor {
     private let windows: WindowProvider
     private let controller: SnapController
-    private var shortcuts: [MouseShortcut] = []
-    private var consumed: Set<Int> = []
+    private var router = MouseButtonRouter()
 
     private lazy var tap = EventTap(
         types: [.otherMouseDown, .otherMouseUp, .otherMouseDragged], mode: .active
-    ) { [weak self] type, event in self?.handle(type, event) ?? event }
+    ) { [weak self] type, event in
+        guard let self else { return event }
+        return self.handle(type, event)
+    }
 
     init(windows: WindowProvider, controller: SnapController) {
         self.windows = windows
@@ -29,31 +31,33 @@ final class MouseButtonMonitor {
 
     /// Runs the tap only while at least one shortcut is configured.
     func update(_ shortcuts: [MouseShortcut], enabled: Bool) {
-        self.shortcuts = shortcuts
+        router.shortcuts = shortcuts
         if enabled, !shortcuts.isEmpty {
             tap.start()
         } else {
             tap.stop()
-            consumed.removeAll()
+            router.reset()
         }
     }
 
     private func handle(_ type: CGEventType, _ event: CGEvent) -> CGEvent? {
-        let button = Int(event.getIntegerValueField(.mouseEventButtonNumber))
+        let phase: MouseButtonPhase
         switch type {
-        case .otherMouseDown:
-            guard let match = MouseShortcuts.match(shortcuts, button: button, modifiers: KeyModifiers(event.flags))
-            else { return event }
-            consumed.insert(button)
-            let point = event.location
-            DispatchQueue.main.async { [weak self] in self?.run(match, at: point) }
-            return nil
-        case .otherMouseUp:
-            return consumed.remove(button) != nil ? nil : event
-        case .otherMouseDragged:
-            return consumed.contains(button) ? nil : event
-        default:
+        case .otherMouseDown: phase = .down
+        case .otherMouseUp: phase = .up
+        case .otherMouseDragged: phase = .dragged
+        default: return event
+        }
+        let button = Int(event.getIntegerValueField(.mouseEventButtonNumber))
+        switch router.route(phase, button: button, modifiers: KeyModifiers(event.flags)) {
+        case .passThrough:
             return event
+        case .consume:
+            return nil
+        case .run(let shortcut):
+            let point = event.location
+            DispatchQueue.main.async { [weak self] in self?.run(shortcut, at: point) }
+            return nil
         }
     }
 
@@ -70,7 +74,7 @@ final class MouseButtonMonitor {
 /// Double-click a title bar to maximize / restore. Listen-only: the click is never consumed, and the
 /// decision uses the frame before the system's own zoom so the two cannot undo each other.
 final class TitleBarClickMonitor {
-    private let windows: WindowProvider
+    private let windows: AXWindowProvider
     private let screens: ScreenProvider
     private let controller: SnapController
 
@@ -79,7 +83,7 @@ final class TitleBarClickMonitor {
         return event
     }
 
-    init(windows: WindowProvider, screens: ScreenProvider, controller: SnapController) {
+    init(windows: AXWindowProvider, screens: ScreenProvider, controller: SnapController) {
         self.windows = windows
         self.screens = screens
         self.controller = controller
@@ -89,21 +93,21 @@ final class TitleBarClickMonitor {
         if enabled { tap.start() } else { tap.stop() }
     }
 
+    /// Runs inside the tap callback so the frame is read before the system zoom animates. This is the
+    /// only AX call, it is bounded by the messaging timeout, and it happens only on double-clicks.
+    /// Only title-bar chrome counts: toolbar buttons, tabs and fields are rejected by role.
     private func doubleClick(at point: CGPoint) {
-        // Hit-test only on double-clicks, outside the tap callback.
-        DispatchQueue.main.async { [weak self] in
-            guard let self, let window = windows.window(at: point), window.canMove,
-                TitleBar.contains(point, in: window.frame),
-                let screen = ScreenGeometry.screen(containing: window.frame, in: screens.screens())
-            else { return }
-            let action = TitleBar.toggleAction(windowFrame: window.frame, visible: screen.visibleFrame)
-            let before = window.frame
-            // After the system's own title-bar zoom has settled.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [controller, windows] in
-                var info = window
-                info.frame = windows.currentFrame(of: window.id) ?? window.frame
-                controller.perform(action, on: info, screen: screen, restoreFrame: before)
-            }
+        guard let window = windows.titleBarWindow(at: point), window.canMove,
+            TitleBar.contains(point, in: window.frame),
+            let screen = ScreenGeometry.screen(containing: window.frame, in: screens.screens())
+        else { return }
+        let action = TitleBar.toggleAction(windowFrame: window.frame, visible: screen.visibleFrame)
+        let before = window.frame
+        // Apply after the system's own title-bar zoom has settled.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [controller, windows] in
+            var info = window
+            info.frame = windows.currentFrame(of: window.id) ?? window.frame
+            controller.perform(action, on: info, screen: screen, restoreFrame: before)
         }
     }
 }
@@ -114,11 +118,12 @@ final class TitleBarClickMonitor {
 final class DragEdgeGuard {
     private struct Line { var minX: CGFloat; var maxX: CGFloat; var y: CGFloat }
     private let screens: ScreenProvider
+    private let isWindowDrag: () -> Bool
     private var lines: [Line] = []
     private var observer: NSObjectProtocol?
 
     private lazy var tap = EventTap(types: [.leftMouseDragged], mode: .active) { [weak self] _, event in
-        guard let self else { return event }
+        guard let self, isWindowDrag() else { return event }
         let p = event.location
         if lines.contains(where: { p.x >= $0.minX && p.x < $0.maxX && p.y < $0.y + 1 }) {
             let line = lines.first { p.x >= $0.minX && p.x < $0.maxX }
@@ -127,7 +132,12 @@ final class DragEdgeGuard {
         return event
     }
 
-    init(screens: ScreenProvider) { self.screens = screens }
+    /// - Parameter isWindowDrag: true only while `DragSnapMonitor` is tracking a window drag, so
+    ///   ordinary drags (text selection, scrollbars) are never clamped.
+    init(screens: ScreenProvider, isWindowDrag: @escaping () -> Bool) {
+        self.screens = screens
+        self.isWindowDrag = isWindowDrag
+    }
 
     func update(enabled: Bool) {
         if enabled {
@@ -172,7 +182,7 @@ final class InputCoordinator {
 
     init(
         settings: SettingsStore, windows: AXWindowProvider, screens: ScreenProvider,
-        controller: SnapController, overlay: PreviewOverlay
+        controller: SnapController, overlay: PreviewOverlay, isWindowDrag: @escaping () -> Bool
     ) {
         self.settings = settings
         self.provider = windows
@@ -180,7 +190,7 @@ final class InputCoordinator {
         self.overlay = overlay
         mouse = MouseButtonMonitor(windows: windows, controller: controller)
         titleBar = TitleBarClickMonitor(windows: windows, screens: screens, controller: controller)
-        edgeGuard = DragEdgeGuard(screens: screens)
+        edgeGuard = DragEdgeGuard(screens: screens, isWindowDrag: isWindowDrag)
         controller.cursor = SystemCursorProvider()
         subscription = settings.changes
             .receive(on: DispatchQueue.main)
