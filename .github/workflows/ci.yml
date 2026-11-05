@@ -1,6 +1,6 @@
 name: CI
 on:
-  push: { branches: [main], tags: ['v*'] }
+  push: { branches: [main, develop], tags: ['v*'] }
   pull_request:
 permissions:
   contents: read
