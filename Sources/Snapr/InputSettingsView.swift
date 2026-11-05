@@ -9,7 +9,7 @@ struct InputSettingsSections: View {
 
     var body: some View {
         Section("Drag snapping") {
-            Text("Zones").font(.headline)
+            Text("Zones").font(.headline).settingTarget("drag.zones")
             ForEach(DragZone.allCases, id: \.self) { zone in
                 Toggle(zone.title, isOn: zoneBinding(zone))
             }
@@ -18,33 +18,40 @@ struct InputSettingsSections: View {
                 Spacer()
                 modifierToggles(optionsBinding(\.requiredModifiers))
             }
-            slider("Edge margin", optionsBinding(\.edgeMargin), 1...50)
-            slider("Corner size", optionsBinding(\.cornerSize), 20...200)
-            Toggle("Animate windows", isOn: optionsBinding(\.animate))
+            .settingTarget("drag.modifier")
+            slider("Edge margin", optionsBinding(\.edgeMargin), 1...50).settingTarget("drag.edge-margin")
+            slider("Corner size", optionsBinding(\.cornerSize), 20...200).settingTarget("drag.corner-size")
+            Toggle("Animate windows", isOn: optionsBinding(\.animate)).settingTarget("drag.animate")
             Toggle("Keep dragging above the menu bar from opening Mission Control", isOn: optionsBinding(\.preventMissionControl))
+                .settingTarget("drag.mission-control")
         }
         Section("Drag preview") {
-            slider("Opacity", optionsBinding(\.footprint.alpha), 0.05...0.8)
-            slider("Border width", optionsBinding(\.footprint.borderWidth), 0...8)
-            Toggle("Blur", isOn: optionsBinding(\.footprint.blur))
+            slider("Opacity", optionsBinding(\.footprint.alpha), 0.05...0.8).settingTarget("drag.preview-opacity")
+            slider("Border width", optionsBinding(\.footprint.borderWidth), 0...8).settingTarget("drag.preview-border")
+            Toggle("Blur", isOn: optionsBinding(\.footprint.blur)).settingTarget("drag.preview-blur")
             HStack {
                 ColorPicker("Color", selection: colorBinding)
                 Button("Use accent color") { updateOptions { $0.footprint.color = nil } }
                     .disabled(settings.get(.dragSnapOptions).footprint.color == nil)
             }
+            .settingTarget("drag.preview-color")
         }
         Section("Displays") {
-            Toggle("Order displays by x coordinate", isOn: rulesBinding(\.orderByX))
+            Toggle("Order displays by x coordinate", isOn: rulesBinding(\.orderByX)).settingTarget("drag.displays-order")
             Toggle("Keep size when moving a maximized window", isOn: rulesBinding(\.keepSizeWhenMaximized))
+                .settingTarget("drag.displays-keep-size")
             Toggle("Repeat last action on the other display", isOn: rulesBinding(\.repeatLastAction))
-            Toggle("Move cursor with window", isOn: rulesBinding(\.moveCursorWithWindow))
+                .settingTarget("drag.displays-repeat")
+            Toggle("Move cursor with window", isOn: rulesBinding(\.moveCursorWithWindow)).settingTarget("drag.displays-cursor")
         }
         Section("Mouse and title bar") {
             Toggle("Double-click title bar to maximize / restore", isOn: boolBinding(.titleBarDoubleClick))
+                .settingTarget("drag.title-bar")
             ForEach(settings.get(.mouseShortcuts)) { shortcut in mouseRow(shortcut) }
             Button("Add Mouse Button Shortcut") {
                 update(.mouseShortcuts) { $0.append(MouseShortcut(button: 2, action: .maximize)) }
             }
+            .settingTarget("drag.mouse-shortcuts")
         }
     }
 

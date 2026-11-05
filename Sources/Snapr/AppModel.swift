@@ -252,7 +252,9 @@ final class AppModel: ObservableObject, AutomationHost {
     }
 
     func showSettings() {
-        settingsWindow.show(title: "Snapr Settings", size: CGSize(width: 560, height: 640)) {
+        settingsWindow.show(
+            title: "Snapr Settings", size: CGSize(width: 860, height: 620), minSize: CGSize(width: 760, height: 520)
+        ) {
             SettingsView(model: self)
         }
     }
