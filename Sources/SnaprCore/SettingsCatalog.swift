@@ -28,9 +28,9 @@ extension SettingsSection {
             ["upgrade", "sparkle", "version", "daily"]),
         .init("general.accessibility", .general, "Accessibility access",
             ["permission", "grant", "privacy", "security", "trusted", "event tap"]),
-        // Added for task 3 (menu intro); the matching Toggle carries .settingTarget("general.show-intro").
-        .init("general.show-intro", .general, "Show intro when opening the menu",
-            ["welcome", "popover", "menu bar", "tips", "introduction", "onboarding"])
+        // Added for task 3 (menu intro); the matching Button carries .settingTarget("general.show-intro").
+        .init("general.show-intro", .general, "Show welcome intro again",
+            ["welcome", "popover", "menu bar", "tips", "introduction", "onboarding", "intro", "reset", "tutorial"])
     ]
 
     private static let shortcutEntries: [SettingsEntry] =

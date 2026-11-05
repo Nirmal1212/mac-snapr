@@ -2,41 +2,61 @@ import XCTest
 @testable import SnaprCore
 
 final class MenuIntroTests: XCTestCase {
-    func testOpensOnIntroByDefault() {
+    func testFirstOpenShowsIntro() {
         XCTAssertEqual(MenuPopoverState().page, .intro)
-    }
-
-    func testOpensOnActionsWhenIntroDisabled() {
-        XCTAssertEqual(MenuPopoverState(introEnabled: false).page, .actions)
-    }
-
-    func testEveryOpenResetsToIntro() {
-        var state = MenuPopoverState()
-        state.showActions()
+        var state = MenuPopoverState(introSeen: true)
         XCTAssertEqual(state.page, .actions)
-        state.didOpen(introEnabled: true)
+        XCTAssertTrue(state.didOpen(introSeen: false))
         XCTAssertEqual(state.page, .intro)
     }
 
-    func testIntroButtonReturnsToIntro() {
-        var state = MenuPopoverState(introEnabled: false)
+    func testAfterIntroSeenOpensOnActions() {
+        var state = MenuPopoverState()
+        XCTAssertFalse(state.didOpen(introSeen: true))
+        XCTAssertEqual(state.page, .actions)
+    }
+
+    func testIntroButtonAndShowActions() {
+        var state = MenuPopoverState(introSeen: true)
         state.showIntro()
         XCTAssertEqual(state.page, .intro)
         state.showActions()
         XCTAssertEqual(state.page, .actions)
     }
 
-    func testReopenHonorsSettingChange() {
+    func testResetIntroSeenShowsIntroAgain() {
+        let settings = SettingsStore(storage: MemorySettingsStorage())
+        XCTAssertFalse(settings.get(.introSeen))
+        settings.set(true, for: .introSeen)
         var state = MenuPopoverState()
-        state.didOpen(introEnabled: false)
+        state.didOpen(introSeen: settings.get(.introSeen))
         XCTAssertEqual(state.page, .actions)
+        settings.set(false, for: .introSeen)
+        state.didOpen(introSeen: settings.get(.introSeen))
+        XCTAssertEqual(state.page, .intro)
     }
 
-    func testShowIntroSettingDefaultsOnAndPersists() {
-        let settings = SettingsStore(storage: MemorySettingsStorage())
-        XCTAssertTrue(settings.get(.showIntroOnOpen))
-        settings.set(false, for: .showIntroOnOpen)
-        XCTAssertFalse(settings.get(.showIntroOnOpen))
+    func testIntroSeenToleratesGarbage() {
+        let storage = MemorySettingsStorage()
+        storage.set(Data("\"x\"".utf8), forKey: "introSeen")
+        XCTAssertFalse(SettingsStore(storage: storage).get(.introSeen))
+    }
+
+    func testPopoverGroupOrder() {
+        let groups = PopoverActionLayout.groups()
+        let titles = groups.map(\.title)
+        let q = titles.firstIndex(of: ActionCategory.quarters.rawValue)!
+        XCTAssertEqual(titles[q + 1], "Maximize & Center")
+        XCTAssertEqual(titles[q + 2], ActionCategory.thirds.rawValue)
+        XCTAssertEqual(groups[q + 1].actions, [.maximize, .center, .restore, .maximizeHeight])
+        // Every registry action appears exactly once.
+        let all = groups.flatMap(\.actions)
+        XCTAssertEqual(all.count, Set(all).count)
+        XCTAssertEqual(Set(all), Set(ActionRegistry.all))
+        // Moved actions are gone from their original categories.
+        for g in groups where g.title != "Maximize & Center" {
+            XCTAssertTrue(Set(g.actions).isDisjoint(with: PopoverActionLayout.sizeActions))
+        }
     }
 
     func testShortcutTipUsesCurrentBinding() {
@@ -86,21 +106,15 @@ final class MenuIntroTests: XCTestCase {
 }
 
 final class ConfigIntroTests: XCTestCase {
-    func testShowIntroRoundTripsAndTolerates() throws {
+    func testIntroSeenIsNotExportedAndOldKeyIgnored() throws {
         let source = SettingsStore(storage: MemorySettingsStorage())
-        source.set(false, for: .showIntroOnOpen)
-        let data = try ConfigDocument.export(from: source).encoded()
+        source.set(true, for: .introSeen)
+        let text = String(decoding: try ConfigDocument.export(from: source).encoded(), as: UTF8.self)
+        XCTAssertFalse(text.contains("introSeen"))
+        XCTAssertFalse(text.contains("showIntroOnOpen"))
+
         let target = SettingsStore(storage: MemorySettingsStorage())
-        try ConfigDocument.decode(from: data).apply(to: target)
-        XCTAssertFalse(target.get(.showIntroOnOpen))
-
-        let bad = SettingsStore(storage: MemorySettingsStorage())
-        try ConfigDocument.decode(from: Data(#"{"showIntroOnOpen": "nope"}"#.utf8)).apply(to: bad)
-        XCTAssertTrue(bad.get(.showIntroOnOpen))
-
-        let absent = SettingsStore(storage: MemorySettingsStorage())
-        absent.set(false, for: .showIntroOnOpen)
-        try ConfigDocument.decode(from: Data("{}".utf8)).apply(to: absent)
-        XCTAssertFalse(absent.get(.showIntroOnOpen))
+        try ConfigDocument.decode(from: Data(#"{"showIntroOnOpen": false, "introSeen": true}"#.utf8)).apply(to: target)
+        XCTAssertFalse(target.get(.introSeen))
     }
 }

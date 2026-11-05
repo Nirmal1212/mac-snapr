@@ -41,7 +41,8 @@ struct GeneralSettingsSection: View {
                     Button("Grant Access…") { model.requestAccessibility() }
                 }
             }
-            Toggle("Show intro when opening the menu", isOn: settings.binding(.showIntroOnOpen))
+            Button("Show welcome intro again") { settings.set(false, for: .introSeen) }
+                .help("The welcome page appears the next time you open the menu bar popover")
                 .settingTarget("general.show-intro")
         }
     }

@@ -1,8 +1,8 @@
 import Foundation
 
 public extension SettingKey {
-    /// Whether the menu bar popover opens on the intro page (every open) instead of the actions list.
-    static var showIntroOnOpen: SettingKey<Bool> { .init("showIntroOnOpen", default: true) }
+    /// True once the welcome intro has been displayed. Per-user UI state: deliberately not part of config export.
+    static var introSeen: SettingKey<Bool> { .init("introSeen", default: false) }
 }
 
 /// The two pages of the menu bar popover.
@@ -13,22 +13,55 @@ public enum MenuPage: Equatable {
 
 /// Page selection for the menu bar popover. Pure so it can be tested without a UI.
 ///
-/// Every open starts on the intro page unless the user turned it off, in which case the popover
-/// opens on the actions page. The user can move between the pages while the popover is open.
+/// The first open for a user shows the intro page; after it has been displayed once, every open starts on
+/// the actions page. The "Intro" header button and "Show welcome intro again" (Settings) bring it back.
 public struct MenuPopoverState: Equatable {
     public private(set) var page: MenuPage
 
-    public init(introEnabled: Bool = true) {
-        page = introEnabled ? .intro : .actions
+    public init(introSeen: Bool = false) {
+        page = introSeen ? .actions : .intro
     }
 
-    /// Called every time the popover is shown; resets the page.
-    public mutating func didOpen(introEnabled: Bool) {
-        page = introEnabled ? .intro : .actions
+    /// Called every time the popover is shown. Returns true when the intro is now displayed for the first
+    /// time and the caller should record `introSeen`.
+    @discardableResult
+    public mutating func didOpen(introSeen: Bool) -> Bool {
+        page = introSeen ? .actions : .intro
+        return !introSeen
     }
 
     public mutating func showActions() { page = .actions }
     public mutating func showIntro() { page = .intro }
+}
+
+/// Display order of actions in the menu bar popover. `ActionCategory` (Settings, URLs, search) is untouched.
+public enum PopoverActionLayout {
+    public struct Group: Equatable {
+        public let title: String
+        public let actions: [SnapAction]
+    }
+
+    public static let sizeActions: [SnapAction] = [.maximize, .center, .restore, .maximizeHeight]
+    public static let sizeTitle = "Maximize & Center"
+
+    /// `ActionRegistry.grouped()` with Maximize, Center, Restore and Maximize Height pulled out of their
+    /// categories into one group directly after Quarters (or after Halves if Quarters is absent).
+    public static func groups() -> [Group] {
+        let moved = Set(sizeActions)
+        var result: [Group] = []
+        var inserted = false
+        let size = Group(title: sizeTitle, actions: sizeActions.filter { ActionRegistry.all.contains($0) })
+        for g in ActionRegistry.grouped() {
+            let rest = g.actions.filter { !moved.contains($0) }
+            if !rest.isEmpty { result.append(Group(title: g.category.rawValue, actions: rest)) }
+            if g.category == .quarters {
+                result.append(size)
+                inserted = true
+            }
+        }
+        if !inserted { result.insert(size, at: min(2, result.count)) }
+        return result
+    }
 }
 
 /// Text shown on the intro page.
