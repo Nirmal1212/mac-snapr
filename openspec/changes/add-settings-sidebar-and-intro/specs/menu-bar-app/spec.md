@@ -1,10 +1,14 @@
 ## ADDED Requirements
 ### Requirement: Menu Intro
-The system SHALL show a short introduction to Snapr when the user clicks the menu bar icon, before the list of actions, every time the popover opens, unless the user turns the intro off in Settings.
+The system SHALL show a short introduction to Snapr the first time the menu bar popover opens for a user, before the list of actions, and open on the list of actions afterwards.
 
-#### Scenario: Every click
-- **WHEN** the user clicks the menu bar icon, at any time
+#### Scenario: First open
+- **WHEN** the user opens the menu bar popover for the first time
 - **THEN** the popover shows the intro page with a description, three quick tips and the Accessibility status
+
+#### Scenario: Later opens
+- **WHEN** the intro has been displayed before and the user clicks the menu bar icon
+- **THEN** the popover opens directly on the actions page
 
 #### Scenario: Continue to actions
 - **WHEN** the user clicks "Show all options" on the intro page
@@ -14,9 +18,9 @@ The system SHALL show a short introduction to Snapr when the user clicks the men
 - **WHEN** the user clicks "Intro" in the actions page header
 - **THEN** the intro page is shown again
 
-#### Scenario: Turn intro off
-- **WHEN** the user disables "Show intro when opening the menu" in Settings
-- **THEN** the popover opens directly on the actions page, which still offers an "Intro" button
+#### Scenario: Show intro again
+- **WHEN** the user clicks "Show welcome intro again" in Settings > General
+- **THEN** the next time the popover opens it shows the intro page
 
 #### Scenario: Missing permission
 - **WHEN** Accessibility access has not been granted

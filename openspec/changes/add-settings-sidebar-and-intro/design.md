@@ -13,7 +13,9 @@ Settings are a single SwiftUI `Form` made of `Section`s contributed by several c
 ### Menu intro
 - **Switch to `MenuBarExtra` with `.window` style** so the content can be a SwiftUI view. The popover has two pages: **Intro** and **Actions**.
 - **Intro page**: app icon, one-sentence description, three tips (keyboard shortcut example from the user's current bindings, drag to an edge, open Settings), the Accessibility status line with a Grant button when needed, and a "Show all options" button that moves to the Actions page.
-- **When the intro shows**: on every open of the popover (every click on the icon), always starting on the Intro page. The Actions page has an "Intro" button in its header to go back. Settings > General has "Show intro when opening the menu" (default on); turning it off makes the popover open directly on Actions.
+- **When the intro shows**: the first time the popover opens for a user (`introSeen` is false). `introSeen` is recorded when the popover hides after the intro was displayed, and afterwards every open starts on the Actions page. The Actions page has an "Intro" button in its header to view the intro again, and Settings > General has "Show welcome intro again", which clears `introSeen`. `introSeen` is per-user UI state and is not exported in config JSON (an old `showIntroOnOpen` key in a config file is ignored).
+- **Popover geometry and dismissal**: the panel is placed under the status item when shown and keeps its bottom-left origin if its content size changes, so a page with a different height would detach the panel from the menu bar. Both pages therefore have the identical fixed size (340 x 480, intro content top-aligned, actions list filling the rest), and the page reset never changes the size. `dismissPopover()` clicks the status item button (`NSStatusBarButton.performClick`), the same action the user takes, so `MenuBarExtra` keeps its presented state and icon highlight consistent; `orderOut`/`close()` hide the panel behind its back, and `close()` is only the fallback. Opening Settings does not change the activation policy (it stays `.accessory`; the Settings window is a plain `NSWindow` activated with `NSApp.activate`).
+- **Action order in the popover**: `PopoverActionLayout` presents Maximize, Center, Restore and Maximize Height as one group "Maximize & Center" directly after Quarters; `ActionCategory` (Settings, URLs, search) is unchanged.
 - **Actions page** keeps today's content (categorized actions, ignore app, custom zones and layouts, Spaces if enabled, Settings, Check for Updates, Quit) in a scrolling list with category disclosure groups, since `.window` style does not give native submenus. Shortcut labels stay right-aligned. Keyboard: arrow navigation, Return to run, Escape closes the popover.
 
 ## Risks / Trade-offs
@@ -22,13 +24,14 @@ Settings are a single SwiftUI `Form` made of `Section`s contributed by several c
 - Search index can drift from the real controls (see above).
 
 ## Decisions Confirmed
-- The intro shows on every click of the menu bar icon (confirmed by the product owner), with an opt-out setting.
+- The intro shows only the first time the popover opens for a user (revised from "every click" after trying the packaged app), with "Show welcome intro again" in Settings.
 
 ## Manual Test Matrix (menu popover)
-The `.window` popover cannot be exercised by unit tests. Before release, on macOS 13 and on macOS 14 or later, repeat each of these 5 times in a row and confirm the popover reopens on the Intro page (or Actions when the intro is off), the menu bar icon highlight is not stuck, and the next icon click opens it again on the first click:
+The `.window` popover cannot be exercised by unit tests. Before release, on macOS 13 and on macOS 14 or later, repeat each of these 5 times in a row and confirm the popover opens on the Intro page only the first time and on the Actions page afterwards, the menu bar icon highlight is not stuck, and the next icon click opens it again on the first click:
 - Open, then press Escape.
 - Open, then run an action (the previously focused window moves; the popover closes).
 - Open, then click outside the popover.
 - Open, press Return on the Intro page ("Show all options"), then reopen: no row is pre-focused and Return does nothing.
+- Open, go to Actions, open Settings, close Settings, reopen the popover: the panel stays attached to the icon (5 times).
 - Cmd+, and Cmd+Q on both the Intro and Actions pages.
-The dismiss mechanism is the single `dismissPopover()` helper in `MenuPopoverView.swift` (`orderOut`; swap for `close()` if the status item state goes out of sync). Also check Activity Monitor: idle CPU with the popover closed and open stays near 0%.
+The dismiss mechanism is the single `dismissPopover()` helper in `MenuPopoverView.swift` (status item click; `close()` fallback). Also check Activity Monitor: idle CPU with the popover closed and open stays near 0%.

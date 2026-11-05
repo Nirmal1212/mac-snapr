@@ -5,15 +5,22 @@ import SwiftUI
 /// Content of the menu bar popover (`MenuBarExtra` in `.window` style): an Intro page and an Actions page.
 struct MenuPopoverView: View {
     @ObservedObject var model: AppModel
-    @State private var state = MenuPopoverState()
+    @State private var state: MenuPopoverState
     /// Reference box: assigning the window must not invalidate the view (no @State/@Published).
     @State private var window = PopoverWindowBox()
     /// Bumped on every open; recreates the pages so focus and expansion state reset.
     @State private var openCount = 0
     /// Static for the process; computed once.
-    private static let groups = ActionRegistry.grouped()
+    private static let groups = PopoverActionLayout.groups()
 
-    private static let width: CGFloat = 320
+    /// Both pages have exactly this size, so the panel never resizes after it has been placed under the status
+    /// item (a resize keeps the bottom-left origin and would detach the panel from the menu bar).
+    static let size = CGSize(width: 340, height: 480)
+
+    init(model: AppModel) {
+        self.model = model
+        _state = State(initialValue: MenuPopoverState(introSeen: model.settings.get(.introSeen)))
+    }
 
     var body: some View {
         Group {
@@ -21,7 +28,7 @@ struct MenuPopoverView: View {
             case .intro:
                 MenuIntroPage(
                     model: model, shortcuts: model.settings.get(.shortcuts), showActions: { state.showActions() },
-                    openSettings: openSettings, quit: quit)
+                    openSettings: openSettings, quit: quit, displayed: { window.introShown = true })
             case .actions:
                 MenuActionsPage(
                     model: model, groups: Self.groups, shortcuts: model.settings.get(.shortcuts),
@@ -30,7 +37,7 @@ struct MenuPopoverView: View {
             }
         }
         .id(openCount)
-        .frame(width: Self.width)
+        .frame(width: Self.size.width, height: Self.size.height, alignment: .top)
         .background(WindowReader(box: window))
         // Escape closes the popover (also reachable through the hidden cancel button below).
         .onExitCommand(perform: dismissPopover)
@@ -41,18 +48,50 @@ struct MenuPopoverView: View {
             guard let key = note.object as? NSWindow, key === window.window else { return }
             didOpen()
         }
-        .onAppear(perform: didOpen)
+        // Hidden: the intro has now been displayed for this open, so record it (once per user).
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { note in
+            guard let key = note.object as? NSWindow, key === window.window, window.introShown else { return }
+            window.introShown = false
+            model.settings.set(true, for: .introSeen)
+        }
     }
 
+    /// Resets the page on every open. The size is identical for both pages, so this cannot move the panel.
+    /// `introSeen` is recorded when the popover hides (not here), so repeated key notifications for the same
+    /// open keep showing the intro.
     private func didOpen() {
-        state.didOpen(introEnabled: model.settings.get(.showIntroOnOpen))
+        window.introShown = false
+        state.didOpen(introSeen: model.settings.get(.introSeen))
         openCount += 1
     }
 
-    /// The single place that dismisses the popover, so the mechanism can be swapped. `orderOut` hides the
-    /// panel without destroying it (the content view and the status item keep their state); `close()` is the
-    /// alternative if the status item highlight ever sticks. See the manual test matrix in design.md.
-    private func dismissPopover() { window.window?.orderOut(nil) }
+    /// The single place that dismisses the popover, so the mechanism can be swapped.
+    ///
+    /// It clicks the status item button, exactly what the user does to toggle the popover, so `MenuBarExtra`
+    /// keeps its own presented/highlight state consistent. `orderOut` and `close()` hide the panel behind
+    /// its back (stuck highlight, the next click only "re-opens" state). `window.close()` is the fallback if the
+    /// button cannot be found. See the manual test matrix in design.md.
+    private func dismissPopover() {
+        guard let panel = window.window, panel.isVisible else { return }
+        if let button = Self.statusButton() {
+            button.performClick(nil)
+        } else {
+            panel.close()
+        }
+    }
+
+    private static func statusButton() -> NSStatusBarButton? {
+        func find(_ view: NSView?) -> NSStatusBarButton? {
+            guard let view else { return nil }
+            if let button = view as? NSStatusBarButton { return button }
+            for sub in view.subviews { if let found = find(sub) { return found } }
+            return nil
+        }
+        for w in NSApp.windows where String(describing: type(of: w)).contains("StatusBar") {
+            if let button = find(w.contentView) { return button }
+        }
+        return nil
+    }
 
     private func quit() { NSApplication.shared.terminate(nil) }
 
@@ -70,6 +109,7 @@ private struct MenuIntroPage: View {
     let showActions: () -> Void
     let openSettings: () -> Void
     let quit: () -> Void
+    let displayed: () -> Void
 
     private static let icon: NSImage? = {
         // Only the packaged app has an AppIcon; `swift run` would show the generic executable icon.
@@ -114,6 +154,7 @@ private struct MenuIntroPage: View {
                 Label("Accessibility access: granted", systemImage: "checkmark.circle.fill")
                     .font(.callout).foregroundColor(.secondary)
             }
+            Spacer(minLength: 0)
             Divider()
             HStack {
                 Button("Quit Snapr", action: quit).keyboardShortcut("q")
@@ -122,6 +163,8 @@ private struct MenuIntroPage: View {
             }
         }
         .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .onAppear(perform: displayed)
     }
 
     private func tip(_ symbol: String, _ text: String) -> some View {
@@ -137,7 +180,7 @@ private struct MenuIntroPage: View {
 
 private struct MenuActionsPage: View {
     @ObservedObject var model: AppModel
-    let groups: [(category: ActionCategory, actions: [SnapAction])]
+    let groups: [PopoverActionLayout.Group]
     let shortcuts: ShortcutMap
     let zones: [CustomZone]
     let layouts: [SavedLayout]
@@ -151,7 +194,9 @@ private struct MenuActionsPage: View {
         VStack(spacing: 0) {
             HStack {
                 Text("Snapr").font(.headline).accessibilityAddTraits(.isHeader)
-                Spacer()
+                Text("Snap windows using shortcuts").font(.caption).foregroundColor(.secondary)
+                    .lineLimit(1).truncationMode(.tail)
+                Spacer(minLength: 8)
                 Button("Intro", action: showIntro).controlSize(.small)
                     .accessibilityLabel("Show introduction")
             }
@@ -164,8 +209,8 @@ private struct MenuActionsPage: View {
                             runAfterClose { model.showOnboarding() }
                         }
                     }
-                    ForEach(groups, id: \.category) { group in
-                        let key = group.category.rawValue
+                    ForEach(groups, id: \.title) { group in
+                        let key = group.title
                         // Large categories start collapsed, as submenus did in the old menu.
                         section(key, defaultOpen: group.actions.count <= 8) {
                             ForEach(group.actions, id: \.self) { action in
@@ -188,7 +233,7 @@ private struct MenuActionsPage: View {
                 }
                 .padding(6)
             }
-            .frame(height: 380)
+            .frame(maxHeight: .infinity)
             .onMoveCommand(perform: move)
             Divider()
             VStack(spacing: 0) {
@@ -310,7 +355,7 @@ private struct MenuActionsPage: View {
         var ids: [String] = []
         if !model.trusted { ids.append("grant") }
         for group in groups {
-            let key = group.category.rawValue
+            let key = group.title
             ids.append("g:\(key)")
             if isOpen(key, group.actions.count <= 8) { ids += group.actions.map { "a:\($0.name)" } }
         }
@@ -372,6 +417,8 @@ private struct MenuRow: View {
 /// Non-observable holder for the popover panel.
 final class PopoverWindowBox {
     weak var window: NSWindow?
+    /// Set while the intro page is on screen during the current open.
+    var introShown = false
 }
 
 /// Exposes the hosting `NSWindow` (the popover panel) to the box without triggering view updates.

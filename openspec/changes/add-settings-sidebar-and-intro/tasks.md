@@ -11,10 +11,12 @@
 - [ ] 2.4 Window sizing and light/dark appearance check
 
 ## 3. Menu intro
-- [x] 3.1 Add `showIntroOnOpen` settings key (default true, tolerant decoding)
+- [x] 3.1 Add `introSeen` state key (default false, tolerant decoding, not exported in config)
 - [x] 3.2 Switch `MenuBarExtra` to `.window` style; build Intro page and Actions page
 - [x] 3.3 Actions page: grouped, scrolling list with shortcut labels; run on previously focused window
-- [x] 3.4 "Show intro when opening the menu" toggle in Settings > General (default on)
+- [x] 3.4 "Show welcome intro again" button in Settings > General (clears `introSeen`)
+- [x] 3.6 Fixed popover size for both pages and a status-item based dismiss so the panel stays attached to the icon
+- [x] 3.7 Popover action order: Maximize, Center, Restore and Maximize Height as a group after Quarters
 - [x] 3.5 Tests for intro state transitions and target-window tracking with mock providers
 
 ## 4. Docs
