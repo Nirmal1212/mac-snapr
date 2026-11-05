@@ -43,6 +43,7 @@ struct SettingsView: View {
             layoutSection
             gapSection
             InputSettingsSections(model: model)
+            CustomLayoutSections(model: model)
             Section("Shortcuts") {
                 ForEach(ActionRegistry.grouped(), id: \.category) { group in
                     Text(group.category.rawValue).font(.headline).padding(.top, 6)

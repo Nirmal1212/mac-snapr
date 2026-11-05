@@ -17,11 +17,18 @@ public struct ConfigDocument: Codable, Equatable {
     public var nativeResizeApps: [String]?
     /// Keyed by action name. Only customizations (differences from default) are exported.
     public var shortcuts: [String: ShortcutEntry]?
+    // MARK: add-custom-layouts-and-spaces
+    /// Custom zones and saved layouts. Absent = leave current values; elements that fail to decode are dropped.
+    public var customZones: [CustomZone]?
+    public var savedLayouts: [SavedLayout]?
 
     public init(
         version: Int? = ConfigDocument.currentVersion, dragSnapEnabled: Bool? = nil, ignoredApps: [String]? = nil,
-        nativeResizeApps: [String]? = nil, shortcuts: [String: ShortcutEntry]? = nil
+        nativeResizeApps: [String]? = nil, shortcuts: [String: ShortcutEntry]? = nil,
+        customZones: [CustomZone]? = nil, savedLayouts: [SavedLayout]? = nil
     ) {
+        self.customZones = customZones
+        self.savedLayouts = savedLayouts
         self.version = version
         self.dragSnapEnabled = dragSnapEnabled
         self.ignoredApps = ignoredApps
@@ -30,7 +37,7 @@ public struct ConfigDocument: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case version, dragSnapEnabled, ignoredApps, nativeResizeApps, shortcuts
+        case version, dragSnapEnabled, ignoredApps, nativeResizeApps, shortcuts, customZones, savedLayouts
     }
 
     public init(from decoder: Decoder) throws {
@@ -41,6 +48,8 @@ public struct ConfigDocument: Codable, Equatable {
         nativeResizeApps = (try? c.decodeIfPresent([String].self, forKey: .nativeResizeApps)) ?? nil
         let raw = (try? c.decodeIfPresent([String: LenientEntry].self, forKey: .shortcuts)) ?? nil
         shortcuts = raw?.compactMapValues(\.entry)
+        customZones = ((try? c.decodeIfPresent(LossyArray<CustomZone>.self, forKey: .customZones)) ?? nil)?.elements
+        savedLayouts = ((try? c.decodeIfPresent(LossyArray<SavedLayout>.self, forKey: .savedLayouts)) ?? nil)?.elements
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -50,6 +59,8 @@ public struct ConfigDocument: Codable, Equatable {
         try c.encodeIfPresent(ignoredApps, forKey: .ignoredApps)
         try c.encodeIfPresent(nativeResizeApps, forKey: .nativeResizeApps)
         try c.encodeIfPresent(shortcuts?.mapValues(LenientEntry.init), forKey: .shortcuts)
+        try c.encodeIfPresent(customZones, forKey: .customZones)
+        try c.encodeIfPresent(savedLayouts, forKey: .savedLayouts)
     }
 
     /// Decodes one shortcut value, mapping `null` to clear and malformed values to nil (skipped).
@@ -98,7 +109,8 @@ public struct ConfigDocument: Codable, Equatable {
         }
         return ConfigDocument(
             dragSnapEnabled: settings.get(.dragSnapEnabled), ignoredApps: settings.get(.ignoredApps),
-            nativeResizeApps: settings.get(.nativeResizeApps), shortcuts: shortcuts)
+            nativeResizeApps: settings.get(.nativeResizeApps), shortcuts: shortcuts,
+            customZones: settings.get(.customZones).elements, savedLayouts: settings.get(.savedLayouts).elements)
     }
 
     /// Applies present fields; absent ones leave current values untouched. Shortcut entries naming
@@ -126,6 +138,14 @@ public struct ConfigDocument: Codable, Equatable {
                 }
             }
             settings.set(map, for: .shortcuts)
+        }
+        if customZones != nil || savedLayouts != nil {
+            // After the shortcut map so runtime shortcuts are checked against the final built-in bindings.
+            let clean = CustomLayoutStore.sanitized(
+                zones: customZones, layouts: savedLayouts, builtIn: settings.get(.shortcuts))
+            if let zones = clean.zones { settings.set(LossyArray(zones), for: .customZones) }
+            if let layouts = clean.layouts { settings.set(LossyArray(layouts), for: .savedLayouts) }
+            skipped += clean.skipped
         }
         return skipped
     }

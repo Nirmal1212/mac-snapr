@@ -83,6 +83,13 @@ public enum AutomationURL {
 /// What the app must provide to carry out automation commands.
 public protocol AutomationHost: AnyObject {
     func perform(_ action: SnapAction)
+    /// Runs a runtime action (custom zone, saved layout, Space move). Returns false when the target does not
+    /// exist or nothing could be done; hosts without runtime actions keep the default.
+    func perform(_ action: RuntimeAction) -> Bool
+}
+
+public extension AutomationHost {
+    func perform(_ action: RuntimeAction) -> Bool { false }
 }
 
 /// Executes URL commands. Action names go through `ActionRegistry.action(named:)`, so every action
@@ -90,6 +97,7 @@ public protocol AutomationHost: AnyObject {
 public final class AutomationRouter {
     public enum Outcome: Equatable {
         case performed(SnapAction)
+        case performedRuntime(RuntimeAction)
         case ignored(String)
         case unignored(String)
         case unknownAction(String)
@@ -118,9 +126,13 @@ public final class AutomationRouter {
         guard let command else { return .invalidURL }
         switch command {
         case .executeAction(let name):
-            guard let action = ActionRegistry.action(named: name) else { return .unknownAction(name) }
-            host?.perform(action)
-            return .performed(action)
+            if let action = ActionRegistry.action(named: name) {
+                host?.perform(action)
+                return .performed(action)
+            }
+            // Runtime names are validated by `RuntimeAction.parse` (id charset and length) before any lookup.
+            if let runtime = RuntimeAction.parse(name), host?.perform(runtime) == true { return .performedRuntime(runtime) }
+            return .unknownAction(name)
         case .ignoreApp(let id):
             return settings.ignore(id) ? .ignored(id) : .ignoreListFull
         case .unignoreApp(let id):
