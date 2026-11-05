@@ -2,8 +2,6 @@
 
 Static site: `index.html`, `styles.css`, `assets/`. No build step, no third-party scripts, fonts or trackers.
 
-`assets/logo.svg` is a placeholder and also serves as the favicon; replace the file in place (keep the path).
-
 ## Preview
 
 ```bash
@@ -13,12 +11,16 @@ python3 -m http.server -d site 8000
 
 ## Publish with GitHub Pages
 
-The repo has no deploy workflow on purpose. Publish manually.
+`.github/workflows/pages.yml` deploys `site/` whenever it changes on `main` (or when run manually from the Actions tab).
 
-With Git Flow, publish from `main` after a release:
+One-time setup: in the repo go to Settings, Pages, and set Source to "GitHub Actions". The first deploy happens on the next push to `main` that touches `site/`, or run the "Pages" workflow manually.
 
-1. After a release is merged to `main`, either copy `site/` into `/docs` on that branch, or add an Actions workflow of your own (Pages serves only `/` or `/docs` from a branch).
-2. In the repo go to Settings, Pages, choose "Deploy from a branch", select `main` and the folder, and Save.
-3. The site appears at `https://nirmal1212.github.io/mac-snapr/`. All links are relative, so a project subpath works.
+The site appears at `https://nirmal1212.github.io/mac-snapr/`. All links are relative, so the project subpath works.
 
-The footer LICENSE link points at the `develop` branch; change it to `main` after the first release.
+To update the site: edit files in `site/` on a feature branch, merge to `develop`, and it goes live when `develop` is merged to `main` as part of a release. For an urgent fix, use a `hotfix/` branch from `main`.
+
+Note: the `github-pages` environment only accepts deploys from `main` by default, which matches Git Flow.
+
+Before sharing the link:
+- Publish a release so the Download button leads to a DMG.
+- Add screenshots and an `og:image` for social previews (needs an absolute URL once the site is live).
