@@ -54,6 +54,10 @@ if ! otool -l "$APP/Contents/MacOS/Snapr" | grep -qF "path $RPATH "; then
   install_name_tool -add_rpath "$RPATH" "$APP/Contents/MacOS/Snapr"
 fi
 
+# --- Icons -------------------------------------------------------------------
+cp assets/branding/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+cp assets/branding/MenuBarIconTemplate.png assets/branding/MenuBarIconTemplate@2x.png "$APP/Contents/Resources/"
+
 # --- Info.plist (must be final before signing) -------------------------------
 SPARKLE_KEYS=""
 if [[ -n "$SU_FEED_URL" && -n "$SU_PUBLIC_ED_KEY" ]]; then
@@ -72,6 +76,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleDisplayName</key><string>Snapr</string>
   <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
   <key>CFBundleExecutable</key><string>Snapr</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>$BUILD_NUMBER</string>
