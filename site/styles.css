@@ -72,3 +72,6 @@ footer ul{display:flex;gap:18px;list-style:none;padding:0;margin:0;flex-wrap:wra
   .hero{grid-template-columns:1fr;padding-top:36px}
   nav ul{gap:12px}.hide-s{display:none}
 }
+
+.badge{display:inline-block;margin:0 0 12px;padding:4px 12px;border-radius:99px;background:var(--accent);color:var(--accent-fg);font-size:.85rem;font-weight:600}
+details ol{margin:0 0 14px;padding-left:22px;color:var(--muted)}details li{margin-bottom:6px}
