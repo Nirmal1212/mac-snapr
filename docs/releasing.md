@@ -18,6 +18,8 @@ Nothing here is automated end to end on purpose: keys and uploads stay with the 
 
 ## Cut a release
 
+After publishing, update the version string on the landing page (`site/index.html`: hero badge, install step 1, privacy section, FAQ) and the status line in `README.md`.
+
 ```bash
 export VERSION=0.2.0
 export BUILD_NUMBER=2                                  # must increase every release (Sparkle compares it)

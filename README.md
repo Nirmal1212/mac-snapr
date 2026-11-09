@@ -2,7 +2,7 @@
 
 Free, native macOS menu bar app for Windows-style window snapping: snap windows to halves, quarters, thirds and more with keyboard shortcuts or by dragging to a screen edge. Fully local, no telemetry.
 
-> Status: pre-release. No public release has been published yet, so installation currently means building from source (see [Build](#build)).
+> Status: public beta (`0.1.0-beta.2`). Download the DMG from the [Releases page](https://github.com/Nirmal1212/mac-snapr/releases), or build from source (see [Build](#build)). Website: https://nirmal1212.github.io/mac-snapr/
 
 Requirements: macOS 13 (Ventura) or later, and Accessibility permission (macOS only lets an app move other apps' windows through the Accessibility API).
 
@@ -44,13 +44,12 @@ open "snapr://ignore-app?bundle-id=com.apple.Safari"          # ignore / unignor
 ```
 Action names match the registry (kebab-case, e.g. `left-half`, `tile-all`). Settings can be exported and imported as JSON in Settings > Configuration; `~/Library/Application Support/Snapr/config.json` is loaded at launch if present. Advanced options are available with `defaults write` (see `openspec/specs/hidden-preferences/spec.md`).
 
-Screenshots: not yet captured.
+Screenshots: not yet captured; see the website for illustrations of the layouts.
 
 ## Install
-Once a release is published:
 1. Download `Snapr-<version>.dmg` from the Releases page and drag Snapr to Applications.
 2. Releases are not yet notarized, so macOS blocks the first launch. On macOS 13/14 right-click Snapr.app and choose Open. On macOS 15 Sequoia and later, try opening it, then use System Settings > Privacy & Security > "Open Anyway". Or run `xattr -dr com.apple.quarantine /Applications/Snapr.app`.
-3. Grant Accessibility access when prompted (System Settings > Privacy & Security > Accessibility).
+3. Grant Accessibility access when prompted (System Settings > Privacy & Security > Accessibility). Beta builds are ad-hoc signed, so after each update remove Snapr from that list and add it again.
 
 Homebrew (`brew install --cask snapr`) is planned once a tap is published; the cask template is `packaging/homebrew/snapr.rb.template`.
 
