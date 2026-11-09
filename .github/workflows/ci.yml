@@ -6,7 +6,7 @@ permissions:
   contents: read
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - name: Lint
@@ -17,7 +17,7 @@ jobs:
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
-    runs-on: macos-14
+    runs-on: macos-15
     permissions:
       contents: write
     steps:
@@ -39,7 +39,7 @@ jobs:
         with:
           files: dist/*.dmg
           name: Snapr ${{ github.ref_name }}
-          # Tags with a hyphen (v0.1.0-beta.1) are published as pre-releases.
+          # Tags with a hyphen (v0.1.0-beta.2) are published as pre-releases.
           prerelease: ${{ contains(github.ref_name, '-') }}
           body_path: ${{ env.NOTES_FILE }}
           generate_release_notes: ${{ env.NOTES_FILE == '' }}
