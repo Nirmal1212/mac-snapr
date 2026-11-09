@@ -22,5 +22,6 @@ To update the site: edit files in `site/` on a feature branch, merge to `develop
 Note: the `github-pages` environment only accepts deploys from `main` by default, which matches Git Flow.
 
 Before sharing the link:
-- Publish a release so the Download button leads to a DMG.
-- Add screenshots and an `og:image` for social previews (needs an absolute URL once the site is live).
+- Keep the version string (hero badge, install step 1, privacy section, FAQ) in sync with the latest release; releases `v0.1.0-beta.1` and `v0.1.0-beta.2` are already published.
+- `og:image` is `assets/og-image.png` (1200x627) referenced by absolute URL; check the preview with a social card validator after deploying.
+- Add real screenshots of the menu bar popover and Settings (still pending).

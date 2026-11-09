@@ -9,10 +9,16 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://nirmal1212.github.io/mac-snapr/">
+<meta property="og:image" content="https://nirmal1212.github.io/mac-snapr/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+<meta property="og:image:alt" content="Snapr: stop dragging windows, snap them with your keyboard.">
 <meta property="og:title" content="Snapr: free window snapping for your Mac menu bar">
 <meta property="og:description" content="Snap windows to halves, quarters, thirds and more. Free, open source, local-only, no telemetry.">
 <meta property="og:site_name" content="Snapr">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nirmal1212.github.io/mac-snapr/assets/og-image.png">
 <meta name="twitter:title" content="Snapr: free window snapping for your Mac menu bar">
 <meta name="twitter:description" content="Snap windows to halves, quarters, thirds and more. Free, open source, local-only, no telemetry.">
 <link rel="stylesheet" href="styles.css">
@@ -36,15 +42,16 @@
 <main id="main">
   <div class="wrap hero" id="top">
     <div>
+      <p class="badge">Public beta · 0.1.0-beta.2</p>
       <h1>Windows that snap into place.</h1>
       <p class="lead">Snapr is a free menu bar app for macOS that tiles your windows with a shortcut or a drag to the screen edge. Windows-style snap, for your Mac.</p>
       <div class="cta">
         <a class="btn primary" href="https://github.com/Nirmal1212/mac-snapr/releases">Download</a>
         <a class="btn ghost" href="https://github.com/Nirmal1212/mac-snapr">View on GitHub</a>
       </div>
-      <p class="note">Free and open source (MIT). Requires macOS 13 or later. Current builds are ad-hoc signed, not notarized; see <a href="#install">install</a>.</p>
+      <p class="note">Free and open source (MIT). Requires macOS 13 or later, Apple silicon or Intel. This is a beta, so expect rough edges and <a href="https://github.com/Nirmal1212/mac-snapr/issues">report what breaks</a>. Builds are ad-hoc signed, not notarized; see <a href="#install">install</a>.</p>
     </div>
-    <div class="mock" role="img" aria-label="Illustration: three windows rearranging from a half and two quarters into three equal thirds.">
+    <div class="mock" role="img" aria-label="Illustration: three windows rearranging from a half and two quarters into three equal thirds, then back.">
       <div class="win w1"></div><div class="win w2"></div><div class="win w3"></div>
     </div>
   </div>
@@ -52,7 +59,7 @@
   <section class="alt" id="features" aria-labelledby="h-features">
     <div class="wrap">
       <h2 id="h-features">What Snapr does</h2>
-      <p class="sub">Everything below is in the app's source today; no release with all of it has shipped yet. Defaults are listed in the README; all shortcuts can be rebound in Settings.</p>
+      <p class="sub">Everything below is in the app today, though some of it has had only light manual testing in this beta. Defaults are listed in the README; all shortcuts can be rebound in Settings.</p>
       <div class="grid">
         <div class="card"><h3>Snap layouts</h3>
           <p>Halves, quarters, thirds and two-thirds, plus fourths, sixths, eighths and ninths, center half, almost-maximize, maximize, center and restore. Repeating a half cycles 1/2, 2/3 and 1/3 width.</p></div>
@@ -82,11 +89,12 @@
   <section id="install" aria-labelledby="h-install">
     <div class="wrap">
       <h2 id="h-install">Install in three steps</h2>
-      <p class="sub">Snapr is currently distributed as an ad-hoc signed DMG. It is not notarized and not on the App Store, so macOS asks for a little extra confirmation the first time.</p>
+      <p class="sub">Snapr 0.1.0-beta.2 is distributed as an ad-hoc signed DMG for Apple silicon and Intel Macs. It is not notarized and not on the App Store, so macOS asks for a little extra confirmation the first time.</p>
       <ol class="steps">
-        <li><h3>Download the DMG</h3><p>Get <code>Snapr-&lt;version&gt;.dmg</code> from the <a href="https://github.com/Nirmal1212/mac-snapr/releases">Releases page</a> and drag Snapr to Applications.</p></li>
+        <li><h3>Download the DMG</h3><p>Get <code>Snapr-0.1.0-beta.2.dmg</code> from the <a href="https://github.com/Nirmal1212/mac-snapr/releases">Releases page</a> and drag Snapr to Applications.</p></li>
         <li><h3>Open past Gatekeeper</h3><p>On macOS 13 and 14, right-click Snapr.app and choose Open. On macOS 15 Sequoia and later, try opening the app, then go to System Settings, Privacy &amp; Security and click "Open Anyway". Or run <code>xattr -dr com.apple.quarantine /Applications/Snapr.app</code>.</p></li>
-        <li><h3>Grant Accessibility</h3><p>When prompted, allow Snapr in System Settings, Privacy &amp; Security, Accessibility. Then use the menu bar icon, a shortcut or a drag.</p></li>
+        <li><h3>Grant Accessibility</h3><p>When prompted, allow Snapr in System Settings, Privacy &amp; Security, Accessibility. Then use the menu bar icon, a shortcut or a drag.</p>
+          <p><strong>After every update, re-grant Accessibility.</strong> Beta builds are signed ad hoc, so macOS treats each new build as a different app. If snapping stops working, remove Snapr from the Accessibility list and add it again, or run <code>tccutil reset Accessibility com.you.snapr</code> and relaunch. The bundle identifier is still a placeholder and will change before 1.0, which needs one more fresh grant.</p></li>
       </ol>
       <p class="note">Prefer Homebrew? A cask template exists in the repo, but a tap has not been published yet. Check the Releases page for status.</p>
     </div>
@@ -95,7 +103,7 @@
   <section class="alt" id="privacy" aria-labelledby="h-privacy">
     <div class="wrap">
       <h2 id="h-privacy">Private by design</h2>
-      <p class="sub">Snapr is free, runs entirely on your Mac, and has no telemetry and no accounts. The only network use is an optional update check, which you can turn off in Settings. Development builds do not check at all. The source is public so you can verify this yourself.</p>
+      <p class="sub">Snapr is free, runs entirely on your Mac, and has no telemetry and no accounts. The 0.1.0-beta.2 build makes no network requests and has no automatic updates; download new betas from the Releases page. An optional, switch-off-able update check is planned for a later release. The source is public so you can verify this yourself.</p>
     </div>
   </section>
 
@@ -105,13 +113,15 @@
       <details><summary>Why does Snapr need Accessibility permission?</summary>
         <p>macOS only lets an app move and resize other apps' windows through the Accessibility API. Snapr uses it for that and for detecting drags to screen edges. It reads window titles and positions locally (for example for saved layouts and the new-window action); it does not read window contents and sends nothing off your Mac.</p></details>
       <details><summary>Why does macOS warn me when I open it?</summary>
-        <p>Current builds are ad-hoc signed and not notarized by Apple, so Gatekeeper blocks a normal double-click on first launch. On macOS 13 and 14, right-click Snapr.app and choose Open. On macOS 15 Sequoia and later that no longer works for unnotarized apps: try opening the app, then use System Settings, Privacy &amp; Security, "Open Anyway". Or remove the quarantine flag with <code>xattr -dr com.apple.quarantine /Applications/Snapr.app</code>.</p></details>
+        <p>Current builds are ad-hoc signed and not notarized by Apple, so Gatekeeper blocks a normal double-click on first launch. The steps to open it anyway are in <a href="#install">Install, step 2</a>.</p></details>
+      <details><summary>Why did snapping stop working after I updated?</summary>
+        <p>Beta builds are signed ad hoc, so macOS treats every new build as a different app and drops the Accessibility grant. Remove Snapr from System Settings, Privacy &amp; Security, Accessibility and add it again. See <a href="#install">step 3</a>.</p></details>
       <details><summary>Which macOS versions are supported?</summary>
         <p>macOS 13 (Ventura) or later.</p></details>
       <details><summary>Is it really free?</summary>
         <p>Yes. Snapr is open source under the MIT license, with no paid tier, ads or accounts.</p></details>
-      <details><summary>Can I turn off update checks?</summary>
-        <p>Yes. Release builds can check for updates about daily; switch that off in Settings.</p></details>
+      <details><summary>Does Snapr check for updates?</summary>
+        <p>The 0.1.0-beta.2 build has no automatic updates at all. A later release may add an optional update check that you can switch off in Settings.</p></details>
     </div>
   </section>
 </main>
