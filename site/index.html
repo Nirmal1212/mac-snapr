@@ -114,8 +114,15 @@
         <p>macOS only lets an app move and resize other apps' windows through the Accessibility API. Snapr uses it for that and for detecting drags to screen edges. It reads window titles and positions locally (for example for saved layouts and the new-window action); it does not read window contents and sends nothing off your Mac.</p></details>
       <details><summary>Why does macOS warn me when I open it?</summary>
         <p>Current builds are ad-hoc signed and not notarized by Apple, so Gatekeeper blocks a normal double-click on first launch. The steps to open it anyway are in <a href="#install">Install, step 2</a>.</p></details>
-      <details><summary>Why did snapping stop working after I updated?</summary>
-        <p>Beta builds are signed ad hoc, so macOS treats every new build as a different app and drops the Accessibility grant. Remove Snapr from System Settings, Privacy &amp; Security, Accessibility and add it again. See <a href="#install">step 3</a>.</p></details>
+      <details id="faq-not-working"><summary>Accessibility is switched on, but Snapr does nothing. What now?</summary>
+        <p>This usually happens after installing or updating a beta. Builds are signed ad hoc, so macOS treats each new build as a different app and the old Accessibility entry stops working even though its toggle still looks on. To fix it:</p>
+        <ol>
+          <li>Quit Snapr from its menu bar icon.</li>
+          <li>Run <code>tccutil reset Accessibility com.you.snapr</code> in Terminal.</li>
+          <li>In System Settings, Privacy &amp; Security, Accessibility, select Snapr if it is still listed and click the minus button, then add <code>/Applications/Snapr.app</code> again with the plus button.</li>
+          <li>Relaunch Snapr, approve the prompt, and try <kbd>Ctrl</kbd>+<kbd>Opt</kbd>+<kbd>←</kbd> on a window.</li>
+        </ol>
+        <p>Still stuck? Check that the copy you granted is the one running (not one in a DMG or build folder), that the shortcut does not clash with another app (try rebinding it in Settings, Shortcuts), and that the app is not on Snapr's ignore list. If you run from source with <code>swift run</code>, grant Accessibility to your terminal app instead. You can also <a href="https://github.com/Nirmal1212/mac-snapr/issues">open an issue</a> with your macOS version and how you launched Snapr.</p></details>
       <details><summary>Which macOS versions are supported?</summary>
         <p>macOS 13 (Ventura) or later.</p></details>
       <details><summary>Is it really free?</summary>

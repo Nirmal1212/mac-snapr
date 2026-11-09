@@ -26,6 +26,10 @@ The landing page SHALL give the concrete current DMG file name, the supported ch
 - **WHEN** a visitor reads the install section
 - **THEN** it names `Snapr-0.1.0-beta.2.dmg` (or the current version), says Apple silicon and Intel are supported, and explains how to re-grant Accessibility after updating
 
+#### Scenario: Accessibility enabled but not working
+- **WHEN** a visitor reads the FAQ
+- **THEN** an entry explains that an enabled Accessibility toggle can be stale after an ad-hoc-signed update, with the reset and re-add steps and further checks (running copy, shortcut clash, ignored app, `swift run`)
+
 #### Scenario: Single Gatekeeper source
 - **WHEN** the FAQ addresses the macOS first-launch warning
 - **THEN** it links to the Install section instead of repeating the steps
