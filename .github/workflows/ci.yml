@@ -29,7 +29,17 @@ jobs:
           SU_PUBLIC_ED_KEY: ${{ vars.SU_PUBLIC_ED_KEY }}
           BUILD_NUMBER: ${{ github.run_number }}
         run: VERSION="${GITHUB_REF_NAME#v}" scripts/package.sh
+      - name: Release notes path
+        run: |
+          NOTES="docs/release-notes/${GITHUB_REF_NAME#v}.md"
+          [ -f "$NOTES" ] && echo "NOTES_FILE=$NOTES" >> "$GITHUB_ENV" || true
       - name: Release
         # Pinned to the commit behind tag v2 (verified with git ls-remote on 2026-11-05).
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
-        with: { files: dist/*.dmg }
+        with:
+          files: dist/*.dmg
+          name: Snapr ${{ github.ref_name }}
+          # Tags with a hyphen (v0.1.0-beta.1) are published as pre-releases.
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          body_path: ${{ env.NOTES_FILE }}
+          generate_release_notes: ${{ env.NOTES_FILE == '' }}
